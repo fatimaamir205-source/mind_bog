@@ -133,6 +133,7 @@ Thumbs.db
 *.rar
 *.tar
 *.zip
+*.jpg
 
 # Temporary files
 *.tmp

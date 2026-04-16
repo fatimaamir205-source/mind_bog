@@ -59,3 +59,18 @@ def get_blog_analysis(blog_id):
     return jsonify({
         'analysis': ai_analysis.to_dict()
     }), 200
+
+@ai_bp.route('/fact-check', methods=['POST'])
+@jwt_required()
+def fact_check_content():
+    data = request.get_json()
+    
+    if not data.get('title') or not data.get('content'):
+        return jsonify({'error': 'Title and content are required'}), 400
+    
+    # Perform fact-checking
+    fact_check_result = ai_service.fact_check_content(data['title'], data['content'])
+    
+    return jsonify({
+        'fact_check': fact_check_result
+    }), 200

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from app import db, bcrypt
-from app.models import User, Profile
+from app.models import User, Profile, TokenBlacklist
 import re
 
 auth_bp = Blueprint('auth', __name__)
@@ -75,6 +75,15 @@ def login():
         'access_token': access_token,
         'user': user.to_dict()
     }), 200
+
+@auth_bp.route('/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    jti = get_jwt()['jti']
+    blacklisted = TokenBlacklist(jti=jti)
+    db.session.add(blacklisted)
+    db.session.commit()
+    return jsonify({'message': 'Logged out successfully'}), 200
 
 @auth_bp.route('/profile', methods=['GET'])
 @jwt_required()

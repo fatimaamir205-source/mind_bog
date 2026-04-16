@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Connection Test - Blog Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .result.warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .status-badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-badge.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-badge.mock {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .info-box {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .info-box h3 {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .info-box p {
+            font-size: 1.2rem;
+            color: #333;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Connection Test</h1>
+            <p>Test your OpenAI API connection and AI features</p>
+        </div>
+        
+        <div class="card">
+            <h2>🔌 OpenAI API Connection</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Test if your OpenAI API key is configured and working correctly.
+            </p>
+            <button class="btn" onclick="testConnection()">Test Connection</button>
+            <div id="connectionResult"></div>
+        </div>
+        
+        <div class="card">
+            <h2>✨ AI Content Analysis</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Test the AI content analysis feature (quality, readability, grammar, SEO).
+            </p>
+            <button class="btn" onclick="testAnalysis()">Test Analysis</button>
+            <div id="analysisResult"></div>
+        </div>
+        
+        <div class="card">
+            <h2>🛡️ AI Fact-Checking</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Test the AI fact-checking feature with credible and suspicious content.
+            </p>
+            <button class="btn" onclick="testFactCheck()">Test Fact-Check</button>
+            <div id="factcheckResult"></div>
+        </div>
+        
+        <div class="card">
+            <h2>🚀 Run All Tests</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Run all tests at once to verify complete AI system functionality.
+            </p>
+            <button class="btn" onclick="runAllTests()">Run All Tests</button>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:5000/api/test';
+        
+        function showLoading(elementId) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = '<div style="padding: 20px; text-align: center;"><div class="loading"></div> Testing...</div>';
+        }
+        
+        function showResult(elementId, data, type = 'info') {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="result ${type}">${JSON.stringify(data, null, 2)}</div>`;
+        }
+        
+        async function testConnection() {
+            showLoading('connectionResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai-connection`);
+                const data = await response.json();
+                
+                let type = 'info';
+                if (data.status === 'success') type = 'success';
+                else if (data.status === 'error') type = 'error';
+                else if (data.status === 'mock') type = 'warning';
+                
+                showResult('connectionResult', data, type);
+            } catch (error) {
+                showResult('connectionResult', {
+                    status: 'error',
+                    message: 'Failed to connect to backend',
+                    error: error.message,
+                    recommendation: 'Make sure backend is running on http://localhost:5000'
+                }, 'error');
+            }
+        }
+        
+        async function testAnalysis() {
+            showLoading('analysisResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai-analyze-test`);
+                const data = await response.json();
+                
+                const type = data.status === 'success' ? 'success' : 'error';
+                showResult('analysisResult', data, type);
+            } catch (error) {
+                showResult('analysisResult', {
+                    status: 'error',
+                    message: 'Failed to test analysis',
+                    error: error.message
+                }, 'error');
+            }
+        }
+        
+        async function testFactCheck() {
+            showLoading('factcheckResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai-factcheck-test`);
+                const data = await response.json();
+                
+                const type = data.status === 'success' ? 'success' : 'error';
+                showResult('factcheckResult', data, type);
+            } catch (error) {
+                showResult('factcheckResult', {
+                    status: 'error',
+                    message: 'Failed to test fact-checking',
+                    error: error.message
+                }, 'error');
+            }
+        }
+        
+        async function runAllTests() {
+            await testConnection();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testAnalysis();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testFactCheck();
+        }
+        
+        // Auto-run connection test on load
+        window.addEventListener('load', () => {
+            setTimeout(testConnection, 500);
+        });
+    </script>
+</body>
+</html>

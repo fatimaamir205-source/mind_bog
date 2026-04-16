@@ -27,6 +27,8 @@ class Config:
     JWT_TOKEN_LOCATION = ['headers']
     JWT_HEADER_NAME = 'Authorization'
     JWT_HEADER_TYPE = 'Bearer'
+    JWT_BLACKLIST_ENABLED = True
+    JWT_BLACKLIST_TOKEN_CHECKS = ['access']
     
     # OpenAI
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')

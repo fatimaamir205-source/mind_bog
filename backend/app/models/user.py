@@ -18,6 +18,8 @@ class User(db.Model):
     comments = db.relationship('Comment', backref='user', lazy=True, cascade='all, delete-orphan')
     likes = db.relationship('Like', backref='user', lazy=True, cascade='all, delete-orphan')
     bookmarks = db.relationship('Bookmark', backref='user', lazy=True, cascade='all, delete-orphan')
+    following = db.relationship('Follow', foreign_keys='Follow.follower_id', backref='follower', lazy=True, cascade='all, delete-orphan')
+    followers = db.relationship('Follow', foreign_keys='Follow.following_id', backref='followed', lazy=True, cascade='all, delete-orphan')
     
     def to_dict(self):
         return {

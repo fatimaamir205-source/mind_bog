@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
-from app.models import Comment, Blog
+from app.models import Comment, Blog, CommentLike
 
 comments_bp = Blueprint('comments', __name__)
 
@@ -43,7 +43,7 @@ def get_comments(blog_id):
 @comments_bp.route('/<int:comment_id>', methods=['DELETE'])
 @jwt_required()
 def delete_comment(comment_id):
-    user_id = int(get_jwt_identity())  # Convert string to int
+    user_id = int(get_jwt_identity())
     comment = Comment.query.get(comment_id)
     
     if not comment:
@@ -56,3 +56,23 @@ def delete_comment(comment_id):
     db.session.commit()
     
     return jsonify({'message': 'Comment deleted successfully'}), 200
+
+@comments_bp.route('/<int:comment_id>/like', methods=['POST'])
+@jwt_required()
+def toggle_comment_like(comment_id):
+    user_id = int(get_jwt_identity())
+    comment = Comment.query.get(comment_id)
+
+    if not comment:
+        return jsonify({'error': 'Comment not found'}), 404
+
+    existing = CommentLike.query.filter_by(user_id=user_id, comment_id=comment_id).first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        return jsonify({'message': 'Like removed', 'likes_count': len(comment.likes) - 1}), 200
+
+    like = CommentLike(user_id=user_id, comment_id=comment_id)
+    db.session.add(like)
+    db.session.commit()
+    return jsonify({'message': 'Comment liked', 'likes_count': len(comment.likes)}), 201

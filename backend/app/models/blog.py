@@ -11,6 +11,7 @@ class Blog(db.Model):
     image_url = db.Column(db.String(255))
     tags = db.Column(db.String(255))  # Comma-separated
     status = db.Column(db.String(20), default='draft')  # draft or published
+    is_fake_news = db.Column(db.Boolean, default=False)  # Flagged as fake news
     views = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -30,6 +31,7 @@ class Blog(db.Model):
             'image_url': self.image_url or '',
             'tags': self.tags.split(',') if self.tags else [],
             'status': self.status,
+            'is_fake_news': self.is_fake_news,
             'views': self.views,
             'likes_count': len(self.likes),
             'comments_count': len(self.comments),
@@ -52,6 +54,9 @@ class AIAnalysis(db.Model):
     grammar_feedback = db.Column(db.Text)
     seo_feedback = db.Column(db.Text)
     readability_score = db.Column(db.Integer)
+    credibility_score = db.Column(db.Integer)  # Fact-check score
+    is_fake_news = db.Column(db.Boolean, default=False)  # Fake news flag
+    fact_check_feedback = db.Column(db.Text)  # Fact-check details
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def to_dict(self):
@@ -62,5 +67,8 @@ class AIAnalysis(db.Model):
             'grammar_feedback': self.grammar_feedback,
             'seo_feedback': self.seo_feedback,
             'readability_score': self.readability_score,
+            'credibility_score': self.credibility_score,
+            'is_fake_news': self.is_fake_news,
+            'fact_check_feedback': self.fact_check_feedback,
             'created_at': self.created_at.isoformat()
         }

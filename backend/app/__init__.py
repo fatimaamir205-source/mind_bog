@@ -37,6 +37,12 @@ def create_app():
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
         return jsonify({'error': 'Token has expired'}), 401
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload):
+        from app.models import TokenBlacklist
+        jti = jwt_payload['jti']
+        return TokenBlacklist.query.filter_by(jti=jti).first() is not None
     
     # Serve uploaded files
     @app.route('/uploads/<folder>/<filename>')
@@ -56,6 +62,9 @@ def create_app():
     from app.routes.ai import ai_bp
     from app.routes.upload import upload_bp
     from app.routes.test import test_bp
+    from app.routes.users import users_bp
+    from app.routes.analytics import analytics_bp
+    from app.routes.trending import trending_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(blogs_bp, url_prefix='/api/blogs')
@@ -64,5 +73,8 @@ def create_app():
     app.register_blueprint(ai_bp, url_prefix='/api/ai')
     app.register_blueprint(upload_bp, url_prefix='/api/upload')
     app.register_blueprint(test_bp, url_prefix='/api/test')
+    app.register_blueprint(users_bp, url_prefix='/api/users')
+    app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+    app.register_blueprint(trending_bp, url_prefix='/api/trending')
     
     return app
