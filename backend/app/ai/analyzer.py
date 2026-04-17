@@ -1,10 +1,13 @@
 import os
 import re
+import requests
+import json
 
 class AIService:
     def __init__(self):
-        self.api_key = os.getenv('OPENAI_API_KEY', '')
+        self.api_key = os.getenv('DEEPSEEK_API_KEY', '')
         self.use_mock = not self.api_key or self.api_key == ''
+        self.api_base = "https://api.deepseek.com/v1"
         
         # Fake news indicators (keywords and patterns)
         self.fake_news_keywords = [
@@ -164,11 +167,8 @@ class AIService:
         }
     
     def _openai_analysis(self, title, content):
-        """Real OpenAI analysis"""
+        """DeepSeek API analysis"""
         try:
-            import openai
-            openai.api_key = self.api_key
-            
             prompt = f"""Analyze this blog post and provide:
 1. Quality score (0-100)
 2. Readability score (0-100)
@@ -180,30 +180,40 @@ Content: {content[:1000]}
 
 Respond in JSON format with keys: quality_score, readability_score, grammar_feedback, seo_feedback"""
             
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": "deepseek-chat",
+                "messages": [
                     {"role": "system", "content": "You are a content analysis expert."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.7,
-                max_tokens=500
-            )
+                "temperature": 0.7,
+                "max_tokens": 500
+            }
             
-            import json
-            result = json.loads(response.choices[0].message.content)
+            response = requests.post(
+                f"{self.api_base}/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=30
+            )
+            response.raise_for_status()
+            
+            result_text = response.json()["choices"][0]["message"]["content"]
+            result = json.loads(result_text)
             return result
             
         except Exception as e:
-            # Fallback to mock if OpenAI fails
+            # Fallback to mock if DeepSeek fails
             return self._mock_analysis(title, content)
     
     def _openai_fact_check(self, title, content):
-        """Real OpenAI fact-checking"""
+        """DeepSeek API fact-checking"""
         try:
-            import openai
-            openai.api_key = self.api_key
-            
             prompt = f"""Analyze this blog post for misinformation, fake news, and credibility.
 
 Title: {title}
@@ -227,22 +237,35 @@ Look for:
 
 Respond in JSON format with keys: credibility_score, is_fake_news, fact_check_feedback, flags_count, warnings_count"""
             
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": "deepseek-chat",
+                "messages": [
                     {"role": "system", "content": "You are a fact-checking expert who identifies misinformation and fake news."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.3,
-                max_tokens=800
-            )
+                "temperature": 0.3,
+                "max_tokens": 800
+            }
             
-            import json
-            result = json.loads(response.choices[0].message.content)
+            response = requests.post(
+                f"{self.api_base}/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=30
+            )
+            response.raise_for_status()
+            
+            result_text = response.json()["choices"][0]["message"]["content"]
+            result = json.loads(result_text)
             return result
             
         except Exception as e:
-            # Fallback to mock if OpenAI fails
+            # Fallback to mock if DeepSeek fails
             return self._mock_fact_check(title, content)
 
 ai_service = AIService()

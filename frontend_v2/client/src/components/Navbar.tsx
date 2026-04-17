@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Menu, X, Search, Moon, Sun, PenTool, LogOut, Settings, LayoutDashboard } from 'lucide-react';
+import { Menu, X, Search, Moon, Sun, PenTool, LogOut, Settings, LayoutDashboard, Bookmark } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -56,12 +56,20 @@ export const Navbar: React.FC = () => {
         {/* Desktop menu */}
         <div className="hidden md:flex items-center gap-4">
           {isAuthenticated && (
-            <Link href="/create">
-              <Button variant="outline" size="sm" className="gap-2">
-                <PenTool className="w-4 h-4" />
-                Write
-              </Button>
-            </Link>
+            <>
+              <Link href="/bookmarks">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Bookmark className="w-4 h-4" />
+                  Bookmarks
+                </Button>
+              </Link>
+              <Link href="/create">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <PenTool className="w-4 h-4" />
+                  Write
+                </Button>
+              </Link>
+            </>
           )}
 
           {/* Theme toggle */}
@@ -101,6 +109,14 @@ export const Navbar: React.FC = () => {
                     <a className="flex items-center gap-2 cursor-pointer">
                       <LayoutDashboard className="w-4 h-4" />
                       <span>Dashboard</span>
+                    </a>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/bookmarks">
+                    <a className="flex items-center gap-2 cursor-pointer">
+                      <Bookmark className="w-4 h-4" />
+                      <span>Bookmarks</span>
                     </a>
                   </Link>
                 </DropdownMenuItem>
@@ -187,6 +203,12 @@ export const Navbar: React.FC = () => {
                 <Link href="/dashboard">
                   <Button variant="outline" size="sm" className="w-full">
                     Dashboard
+                  </Button>
+                </Link>
+                <Link href="/bookmarks">
+                  <Button variant="outline" size="sm" className="w-full gap-2">
+                    <Bookmark className="w-4 h-4" />
+                    Bookmarks
                   </Button>
                 </Link>
                 {user?.role === 'admin' && (

@@ -15,6 +15,7 @@ import CreateBlog from "./pages/CreateBlog";
 import EditBlog from "./pages/EditBlog";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
+import Bookmarks from "./pages/Bookmarks";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
@@ -53,6 +54,13 @@ function Router() {
         {() => (
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        )}
+      </Route>
+      <Route path={"/bookmarks"}>
+        {() => (
+          <ProtectedRoute>
+            <Bookmarks />
           </ProtectedRoute>
         )}
       </Route>
