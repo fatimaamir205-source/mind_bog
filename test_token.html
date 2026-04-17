@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Token Test</title>
+</head>
+<body>
+    <h1>Login Test</h1>
+    
+    <div>
+        <h2>Login</h2>
+        <input type="email" id="email" value="admin@blog.com" placeholder="Email">
+        <input type="password" id="password" value="admin123" placeholder="Password">
+        <button onclick="testLogin()">Login</button>
+    </div>
+    
+    <div>
+        <h2>Create Blog</h2>
+        <input type="text" id="title" value="Test Blog" placeholder="Title">
+        <textarea id="content" placeholder="Content">This is a test blog</textarea>
+        <button onclick="testCreateBlog()">Create Blog</button>
+    </div>
+    
+    <div>
+        <h2>Results</h2>
+        <pre id="results"></pre>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        
+        function log(message) {
+            document.getElementById('results').textContent += message + '\n';
+            console.log(message);
+        }
+        
+        async function testLogin() {
+            try {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                log('Attempting login...');
+                
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                log('Login response: ' + JSON.stringify(data, null, 2));
+                
+                if (data.access_token) {
+                    localStorage.setItem('token', data.access_token);
+                    log('Token saved: ' + data.access_token);
+                    
+                    // Verify it was saved
+                    const saved = localStorage.getItem('token');
+                    log('Token retrieved from localStorage: ' + saved);
+                } else {
+                    log('ERROR: No token in response');
+                }
+            } catch (error) {
+                log('ERROR: ' + error.message);
+            }
+        }
+        
+        async function testCreateBlog() {
+            try {
+                const token = localStorage.getItem('token');
+                log('Token from localStorage: ' + token);
+                
+                if (!token) {
+                    log('ERROR: No token found. Please login first.');
+                    return;
+                }
+                
+                const title = document.getElementById('title').value;
+                const content = document.getElementById('content').value;
+                
+                log('Attempting to create blog...');
+                log('Authorization header: Bearer ' + token);
+                
+                const response = await fetch(`${API_URL}/blogs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        content: content,
+                        tags: ['test'],
+                        status: 'published'
+                    })
+                });
+                
+                const data = await response.json();
+                log('Create blog response (' + response.status + '): ' + JSON.stringify(data, null, 2));
+                
+            } catch (error) {
+                log('ERROR: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
