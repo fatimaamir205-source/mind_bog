@@ -10,9 +10,11 @@ import { Flame, TrendingUp, Users, Search } from 'lucide-react';
 import { blogAPI, trendingAPI } from '@/services/api';
 import { Link } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/contexts/I18nContext';
 
 export default function Home() {
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const [blogs, setBlogs] = useState<any[]>([]);
   const [trendingBlogs, setTrendingBlogs] = useState<any[]>([]);
   const [trendingTopics, setTrendingTopics] = useState<any[]>([]);
@@ -100,7 +102,7 @@ export default function Home() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="Search blogs..."
+                  placeholder={t('home.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-11 pr-4 h-12 text-base"
@@ -115,19 +117,18 @@ export default function Home() {
           <div className="container py-12 md:py-16">
             <div className="max-w-2xl">
               <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Share Your Ideas with the World
+                {t('home.heroTitle')}
               </h1>
               <p className="text-lg text-muted-foreground mb-6">
-                Write, share, and discover amazing stories from creators around the globe.
-                Join our community of writers and thinkers today.
+                {t('home.heroDescription')}
               </p>
               {isAuthenticated ? (
                 <Link href="/create">
-                  <Button size="lg" className="gap-2">Start Writing</Button>
+                  <Button size="lg" className="gap-2">{t('home.startWriting')}</Button>
                 </Link>
               ) : (
                 <Link href="/register">
-                  <Button size="lg" className="gap-2">Get Started</Button>
+                  <Button size="lg" className="gap-2">{t('home.getStarted')}</Button>
                 </Link>
               )}
             </div>
@@ -143,11 +144,11 @@ export default function Home() {
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="recent" className="gap-2">
                     <TrendingUp className="w-4 h-4" />
-                    <span className="hidden sm:inline">Recent</span>
+                    <span className="hidden sm:inline">{t('home.recent')}</span>
                   </TabsTrigger>
                   <TabsTrigger value="trending" className="gap-2">
                     <Flame className="w-4 h-4" />
-                    <span className="hidden sm:inline">Trending</span>
+                    <span className="hidden sm:inline">{t('home.trending')}</span>
                   </TabsTrigger>
                 </TabsList>
 
@@ -155,7 +156,7 @@ export default function Home() {
                   {isLoading ? (
                     <BlogListSkeleton count={3} />
                   ) : blogs.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-12">No blogs yet. Be the first to write!</p>
+                    <p className="text-muted-foreground text-center py-12">{t('home.noBlogs')}</p>
                   ) : (
                     <div className="columns-1 md:columns-2 xl:columns-3 gap-4 space-y-4">
                       {blogs.map(mapBlog).map((blog) => (
@@ -174,7 +175,7 @@ export default function Home() {
                   {isLoading ? (
                     <BlogListSkeleton count={3} />
                   ) : trendingBlogs.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-12">No trending blogs yet.</p>
+                    <p className="text-muted-foreground text-center py-12">{t('home.noTrending')}</p>
                   ) : (
                     <div className="columns-1 md:columns-2 xl:columns-3 gap-4 space-y-4">
                       {trendingBlogs.map(mapBlog).map((blog) => (
@@ -197,7 +198,7 @@ export default function Home() {
               <div className="bg-card border border-border rounded-lg p-6">
                 <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
                   <Flame className="w-5 h-5 text-orange-500" />
-                  Trending Topics
+                  {t('home.trendingTopics')}
                 </h3>
                 {isLoading ? (
                   <div className="space-y-2">
@@ -226,7 +227,7 @@ export default function Home() {
               <div className="bg-card border border-border rounded-lg p-6">
                 <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
                   <Users className="w-5 h-5 text-blue-500" />
-                  Recommended Authors
+                  {t('home.recommendedAuthors')}
                 </h3>
                 {isLoading ? (
                   <div className="space-y-3">
@@ -253,7 +254,7 @@ export default function Home() {
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{author.username}</p>
                             <p className="text-xs text-muted-foreground">
-                              {author.blog_count} blogs · {author.followers_count} followers
+                              {author.blog_count} {t('home.blogs')} · {author.followers_count} {t('home.followers')}
                             </p>
                           </div>
                         </div>

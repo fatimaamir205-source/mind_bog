@@ -4,6 +4,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import { I18nProvider } from "./contexts/I18nContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 // User pages
@@ -108,12 +109,14 @@ function App() {
         defaultTheme="light"
         switchable
       >
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </AuthProvider>
+        <I18nProvider>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Router />
+            </TooltipProvider>
+          </AuthProvider>
+        </I18nProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
