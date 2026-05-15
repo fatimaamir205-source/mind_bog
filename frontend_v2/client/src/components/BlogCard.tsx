@@ -48,10 +48,10 @@ export const BlogCard: React.FC<BlogCardProps> = ({
   return (
     <Link href={`/blog/${id}`}>
       <a className="block">
-        <article className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 hover:translate-y-[-2px] cursor-pointer">
+        <article className="bg-card border border-border rounded-lg overflow-hidden hover:border-foreground transition-colors duration-200 cursor-pointer">
           {/* Cover image thumbnail */}
           {coverImage && (
-            <div className="w-full h-44 overflow-hidden">
+            <div className="w-full aspect-video overflow-hidden">
               <img src={coverImage} alt={title} className="w-full h-full object-cover" />
             </div>
           )}
@@ -66,8 +66,8 @@ export const BlogCard: React.FC<BlogCardProps> = ({
                   author.username.charAt(0).toUpperCase()
                 )}
               </div>
-              <div>
-                <p className="font-medium text-sm">{author.username}</p>
+              <div className="min-w-0">
+                <p className="font-medium text-sm truncate">{author.username}</p>
                 <p className="text-xs text-muted-foreground">{formattedDate}</p>
               </div>
             </div>
@@ -75,7 +75,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
             {/* Content */}
             <div className="mb-4">
               <h3 className="font-bold text-lg mb-2 line-clamp-2 hover:text-primary transition-colors">{title}</h3>
-              <p className="text-sm text-muted-foreground line-clamp-2">{excerpt}</p>
+              <p className="text-sm text-muted-foreground line-clamp-3">{excerpt}</p>
             </div>
 
             {/* Tags */}

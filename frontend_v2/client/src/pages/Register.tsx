@@ -82,10 +82,10 @@ export default function Register() {
     );
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex">
       <Navbar />
 
-      <main className="flex-1 flex items-center justify-center py-12">
+      <main className="flex-1 md:ml-20 pt-16 md:pt-0 flex items-center justify-center py-12">
         <div className="w-full max-w-md">
           <div className="bg-card border border-border rounded-lg p-8 space-y-6">
             {/* Header */}
@@ -239,8 +239,6 @@ export default function Register() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

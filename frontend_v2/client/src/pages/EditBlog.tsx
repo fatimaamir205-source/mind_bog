@@ -51,8 +51,11 @@ export default function EditBlog() {
 
   if (!match) return null;
   if (isLoading) return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <p className="text-muted-foreground">Loading...</p>
+    <div className="min-h-screen bg-background flex">
+      <Navbar />
+      <main className="flex-1 md:ml-20 pt-16 md:pt-0 flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </main>
     </div>
   );
 
@@ -127,9 +130,9 @@ export default function EditBlog() {
   const isBusy = isSubmitting || isUploadingImage;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex">
       <Navbar />
-      <main className="flex-1">
+      <main className="flex-1 md:ml-20 pt-16 md:pt-0">
         <div className="container py-8">
           <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} className="mb-6 gap-2">
             <ArrowLeft className="w-4 h-4" />Back to Dashboard
@@ -298,7 +301,6 @@ export default function EditBlog() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

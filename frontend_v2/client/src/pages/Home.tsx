@@ -4,8 +4,9 @@ import { Footer } from '@/components/Footer';
 import { BlogCard } from '@/components/BlogCard';
 import { BlogListSkeleton } from '@/components/Loader';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Flame, TrendingUp, Users } from 'lucide-react';
+import { Flame, TrendingUp, Users, Search } from 'lucide-react';
 import { blogAPI, trendingAPI } from '@/services/api';
 import { Link } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +19,12 @@ export default function Home() {
   const [recommendedAuthors, setRecommendedAuthors] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('recent');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Search:', searchQuery);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -81,10 +88,28 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex">
       <Navbar />
 
-      <main className="flex-1">
+      <main className="flex-1 md:ml-20 pt-16 md:pt-0">
+        {/* Search Bar */}
+        <div className="border-b border-border bg-background sticky top-0 z-10">
+          <div className="container py-4">
+            <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search blogs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-11 pr-4 h-12 text-base"
+                />
+              </div>
+            </form>
+          </div>
+        </div>
+
         {/* Hero section */}
         <section className="bg-gradient-to-br from-primary/5 to-secondary/5 border-b border-border">
           <div className="container py-12 md:py-16">
@@ -111,9 +136,9 @@ export default function Home() {
 
         {/* Main content */}
         <div className="container py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Blog feed - 65% */}
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Blog feed - Masonry Grid */}
+            <div className="lg:col-span-3">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="recent" className="gap-2">
@@ -126,35 +151,41 @@ export default function Home() {
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="recent" className="space-y-4">
+                <TabsContent value="recent">
                   {isLoading ? (
                     <BlogListSkeleton count={3} />
                   ) : blogs.length === 0 ? (
                     <p className="text-muted-foreground text-center py-12">No blogs yet. Be the first to write!</p>
                   ) : (
-                    blogs.map(mapBlog).map((blog) => (
-                      <BlogCard
-                        key={blog.id}
-                        {...blog}
-                        onLike={() => handleLikeBlog(blog.id)}
-                      />
-                    ))
+                    <div className="columns-1 md:columns-2 xl:columns-3 gap-4 space-y-4">
+                      {blogs.map(mapBlog).map((blog) => (
+                        <div key={blog.id} className="break-inside-avoid mb-4">
+                          <BlogCard
+                            {...blog}
+                            onLike={() => handleLikeBlog(blog.id)}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </TabsContent>
 
-                <TabsContent value="trending" className="space-y-4">
+                <TabsContent value="trending">
                   {isLoading ? (
                     <BlogListSkeleton count={3} />
                   ) : trendingBlogs.length === 0 ? (
                     <p className="text-muted-foreground text-center py-12">No trending blogs yet.</p>
                   ) : (
-                    trendingBlogs.map(mapBlog).map((blog) => (
-                      <BlogCard
-                        key={blog.id}
-                        {...blog}
-                        onLike={() => handleLikeBlog(blog.id)}
-                      />
-                    ))
+                    <div className="columns-1 md:columns-2 xl:columns-3 gap-4 space-y-4">
+                      {trendingBlogs.map(mapBlog).map((blog) => (
+                        <div key={blog.id} className="break-inside-avoid mb-4">
+                          <BlogCard
+                            {...blog}
+                            onLike={() => handleLikeBlog(blog.id)}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </TabsContent>
               </Tabs>
@@ -235,8 +266,6 @@ export default function Home() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

@@ -60,12 +60,11 @@ export default function BlogDetails() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen bg-background flex">
         <Navbar />
-        <main className="flex-1 container py-12">
+        <main className="flex-1 md:ml-20 pt-16 md:pt-0 container py-12">
           <BlogDetailSkeleton />
         </main>
-        <Footer />
       </div>
     );
   }
@@ -160,9 +159,9 @@ export default function BlogDetails() {
   const coverImage = blog.image_url ? resolveImage(blog.image_url) : null;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex">
       <Navbar />
-      <main className="flex-1">
+      <main className="flex-1 md:ml-20 pt-16 md:pt-0">
         <div className="container pt-6">
           <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -243,7 +242,6 @@ export default function BlogDetails() {
           />
         </article>
       </main>
-      <Footer />
     </div>
   );
 }

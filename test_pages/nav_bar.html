@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Minimal Sidebar • Icon Only</title>
+  <!-- Font Awesome 6 (free icons) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* -------------------------------
+       MINIMALISTIC THEME (Dark/Light)
+    -------------------------------- */
+    :root {
+      --bg-app: #F1F5F9;
+      --sidebar-bg: #FFFFFF;
+      --sidebar-border: #E2E8F0;
+      --icon-default: #475569;
+      --icon-hover: #0F172A;
+      --icon-active: #2563EB;
+      --hover-bg: #F1F5F9;
+      --active-bg: #EFF6FF;
+      --logo-icon-bg: #1E293B;
+      --logo-icon-color: white;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    body.dark {
+      --bg-app: #0A0C10;
+      --sidebar-bg: #111317;
+      --sidebar-border: #23262F;
+      --icon-default: #9CA3AF;
+      --icon-hover: #F1F5F9;
+      --icon-active: #60A5FA;
+      --hover-bg: #1F222A;
+      --active-bg: #1E293B;
+      --logo-icon-bg: #2D3748;
+      --logo-icon-color: #E2E8F0;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    body {
+      background: var(--bg-app);
+      font-family: system-ui, 'Inter', -apple-system, 'Segoe UI', sans-serif;
+      transition: background 0.2s ease;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ----- LAYOUT: SIDEBAR (icon only, fixed) + EMPTY MAIN ----- */
+    .app-layout {
+      display: flex;
+      height: 100%;
+      width: 100%;
+    }
+
+    /* SIDEBAR - minimal, clean, no text */
+    .sidebar {
+      width: 88px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--sidebar-border);
+      backdrop-filter: blur(0px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 0 28px 0;
+      transition: background 0.2s, border 0.2s;
+      z-index: 20;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* top section: logo + nav */
+    .sidebar-top {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      gap: 40px;
+    }
+
+    /* LOGO (minimalist icon) */
+    .logo-minimal {
+      width: 48px;
+      height: 48px;
+      background: var(--logo-icon-bg);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease;
+      cursor: default;
+    }
+    .logo-minimal i {
+      font-size: 26px;
+      color: var(--logo-icon-color);
+    }
+    .logo-minimal:hover {
+      transform: scale(0.96);
+    }
+
+    /* NAVIGATION (icon only, vertical) */
+    .nav-icons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      width: 100%;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      width: 52px;
+      height: 52px;
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      color: var(--icon-default);
+      font-size: 1.6rem;
+    }
+    .nav-btn i {
+      font-size: 1.55rem;
+    }
+    .nav-btn:hover {
+      background: var(--hover-bg);
+      color: var(--icon-hover);
+      transform: translateY(-2px);
+    }
+    .nav-btn.active {
+      background: var(--active-bg);
+      color: var(--icon-active);
+      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.15), 0 2px 4px rgba(0,0,0,0.02);
+    }
+    /* no text anywhere */
+    .nav-btn span {
+      display: none;
+    }
+
+    /* dark/light toggle button (icon only) */
+    .theme-toggle {
+      margin-top: 8px;
+      width: 52px;
+      height: 52px;
+      border-radius: 28px;
+      background: transparent;
+      border: none;
+      font-size: 1.6rem;
+      color: var(--icon-default);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .theme-toggle:hover {
+      background: var(--hover-bg);
+      color: var(--icon-hover);
+      transform: rotate(8deg);
+    }
+
+    /* PROFILE ICON — at the bottom of sidebar */
+    .profile-bottom {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding-bottom: 8px;
+    }
+    .profile-icon-btn {
+      background: transparent;
+      border: none;
+      width: 56px;
+      height: 56px;
+      border-radius: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--icon-default);
+      font-size: 2rem;
+      transition: all 0.2s;
+    }
+    .profile-icon-btn i {
+      font-size: 2rem;
+    }
+    .profile-icon-btn:hover {
+      background: var(--hover-bg);
+      color: var(--icon-hover);
+      transform: scale(0.96);
+    }
+
+    /* EMPTY MAIN CONTENT — only minimal background, no cards/text */
+    .main-empty {
+      flex: 1;
+      background: var(--bg-app);
+      transition: background 0.2s;
+      height: 100%;
+      overflow: auto;
+    }
+    /* completely empty — only to fulfill "no content" requirement */
+    /* optional subtle crosshair for design but invisible? keeping zero content */
+    
+    /* responsive touch: keep sidebar fixed width on mobile */
+    @media (max-width: 560px) {
+      .sidebar {
+        width: 76px;
+        padding: 20px 0 20px 0;
+      }
+      .nav-btn, .theme-toggle {
+        width: 48px;
+        height: 48px;
+      }
+      .nav-btn i {
+        font-size: 1.4rem;
+      }
+      .profile-icon-btn {
+        width: 48px;
+        height: 48px;
+      }
+      .profile-icon-btn i {
+        font-size: 1.8rem;
+      }
+      .logo-minimal {
+        width: 44px;
+        height: 44px;
+      }
+      .logo-minimal i {
+        font-size: 22px;
+      }
+    }
+
+    /* tooltip minimal (optional but clean) - no text on buttons anyway */
+    .nav-btn:focus-visible, .theme-toggle:focus-visible, .profile-icon-btn:focus-visible {
+      outline: 2px solid var(--icon-active);
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <!-- SIDEBAR: Icon only + profile at bottom -->
+  <aside class="sidebar">
+    <!-- top group: logo + navigation (home, write, dashboard, admin plan, theme toggle) -->
+    <div class="sidebar-top">
+      <!-- Minimal Logo (icon only) -->
+      <div class="logo-minimal" aria-label="Logo">
+        <i class="fas fa-bolt"></i>
+      </div>
+
+      <!-- navigation icons: no text -->
+      <div class="nav-icons">
+        <!-- Home -->
+        <button class="nav-btn active" id="navHome" aria-label="Home">
+          <i class="fas fa-home"></i>
+          <span></span>
+        </button>
+        <!-- Write -->
+        <button class="nav-btn" id="navWrite" aria-label="Write">
+          <i class="fas fa-pen-fancy"></i>
+          <span></span>
+        </button>
+        <!-- Dashboard -->
+        <button class="nav-btn" id="navDashboard" aria-label="Dashboard">
+          <i class="fas fa-chart-line"></i>
+          <span></span>
+        </button>
+        <!-- Admin Plan -->
+        <button class="nav-btn" id="navAdmin" aria-label="Admin Plan">
+          <i class="fas fa-crown"></i>
+          <span></span>
+        </button>
+        
+        <!-- Dark/Light Mode Toggle (icon only) -->
+        <button class="theme-toggle" id="darkLightToggleIcon" aria-label="Dark/Light mode">
+          <i id="themeModeIcon" class="fas fa-moon"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- PROFILE ICON at bottom (exactly bottom of sidebar) -->
+    <div class="profile-bottom">
+      <button class="profile-icon-btn" id="profileBtnBottom" aria-label="Profile">
+        <i class="fas fa-user-circle"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT: COMPLETELY EMPTY (no cards, no rooms, no text) -->
+  <main class="main-empty" aria-label="Empty workspace"></main>
+</div>
+
+<script>
+  (function() {
+    // ---------- DARK / LIGHT MODE (icon only, minimal) ----------
+    const body = document.body;
+    const themeToggleBtn = document.getElementById('darkLightToggleIcon');
+    const themeIconEl = document.getElementById('themeModeIcon');
+    
+    // check localStorage or system preference? default dark? start with light mode? For minimalism, use light as default but follow previous? we'll set default light? because earlier style had dark mode but we ensure user can toggle.
+    // Set initial mode: light (no dark class) but we might respect if browser prefers? but keep consistent. Starting with light gives fresh minimal.
+    // However many minimal dashboards start light; the toggle toggles between.
+    if (!body.classList.contains('dark')) {
+      // default light mode is applied (no dark class)
+      themeIconEl.className = 'fas fa-moon'; // moon means switch to dark mode (shows moon when light)
+    }
+    
+    function updateThemeUI() {
+      const isDark = body.classList.contains('dark');
+      if (isDark) {
+        themeIconEl.className = 'fas fa-sun';  // sun icon because dark mode active -> show sun to switch to light
+      } else {
+        themeIconEl.className = 'fas fa-moon'; // moon icon because light mode active -> shows moon to switch to dark
+      }
+    }
+    
+    function toggleDarkLight() {
+      if (body.classList.contains('dark')) {
+        body.classList.remove('dark');
+      } else {
+        body.classList.add('dark');
+      }
+      updateThemeUI();
+      // save preference
+      localStorage.setItem('minimalSidebarTheme', body.classList.contains('dark') ? 'dark' : 'light');
+    }
+    
+    themeToggleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      toggleDarkLight();
+    });
+    
+    // Load saved theme
+    const savedTheme = localStorage.getItem('minimalSidebarTheme');
+    if (savedTheme === 'dark') {
+      body.classList.add('dark');
+    } else if (savedTheme === 'light') {
+      body.classList.remove('dark');
+    } else {
+      // optional: check system preference?
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        body.classList.add('dark');
+      } else {
+        body.classList.remove('dark');
+      }
+    }
+    updateThemeUI();
+    
+    // ---------- SIDEBAR ACTIVE STATE MANAGEMENT (only icon visual) ----------
+    const navButtons = document.querySelectorAll('.nav-btn'); // all .nav-btn except theme-toggle? theme-toggle separate class
+    // Note: theme-toggle button is not part of nav active cycle.
+    function setActiveNav(activeBtn) {
+      navButtons.forEach(btn => {
+        btn.classList.remove('active');
+      });
+      if (activeBtn && activeBtn.classList.contains('nav-btn')) {
+        activeBtn.classList.add('active');
+      }
+    }
+    
+    // Add click handlers to each navigation button (home, write, dashboard, admin plan)
+    const homeBtn = document.getElementById('navHome');
+    const writeBtn = document.getElementById('navWrite');
+    const dashboardBtn = document.getElementById('navDashboard');
+    const adminBtn = document.getElementById('navAdmin');
+    
+    if (homeBtn) {
+      homeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        setActiveNav(homeBtn);
+        // Optional console log for demo but no content change
+        console.log('🏠 Minimal nav: Home');
+      });
+    }
+    if (writeBtn) {
+      writeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        setActiveNav(writeBtn);
+        console.log('✍️ Write section (icon only)');
+      });
+    }
+    if (dashboardBtn) {
+      dashboardBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        setActiveNav(dashboardBtn);
+        console.log('📊 Dashboard minimal');
+      });
+    }
+    if (adminBtn) {
+      adminBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        setActiveNav(adminBtn);
+        console.log('👑 Admin plan prototype');
+      });
+    }
+    
+    // Profile icon bottom click (simple interaction)
+    const profileBottomBtn = document.getElementById('profileBtnBottom');
+    if (profileBottomBtn) {
+      profileBottomBtn.addEventListener('click', () => {
+        console.log('👤 Profile menu (minimal sidebar)');
+        // you can extend with alert or just lightweight demo
+        // no intrusive content, just console, but add a tiny subtle effect
+        profileBottomBtn.style.transform = 'scale(0.94)';
+        setTimeout(() => {
+          profileBottomBtn.style.transform = '';
+        }, 150);
+      });
+    }
+    
+    // ensure no text tooltip appears? not needed.
+    // Also guarantee main area remains empty (no injected elements)
+    // Additionally remove any possible existing main content from previous iterations.
+    const mainEmptyArea = document.querySelector('.main-empty');
+    if (mainEmptyArea) {
+      // ensure absolutely no children inside main (empty)
+      while (mainEmptyArea.firstChild) {
+        mainEmptyArea.removeChild(mainEmptyArea.firstChild);
+      }
+      // also no text nodes remain
+      if (mainEmptyArea.innerText.trim() !== '') {
+        mainEmptyArea.innerText = '';
+      }
+    }
+    
+    // small extra: if any accidental leftover from global styles, clean
+    document.body.style.overflow = 'hidden';
+  })();
+</script>
+</body>
+</html>

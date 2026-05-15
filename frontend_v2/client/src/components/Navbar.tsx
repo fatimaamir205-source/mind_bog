@@ -3,225 +3,191 @@ import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Home, Moon, Sun, PenTool, LogOut, Settings, LayoutDashboard, User, Menu, X } from 'lucide-react';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Menu, X, Search, Moon, Sun, PenTool, LogOut, Settings, LayoutDashboard } from 'lucide-react';
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export const Navbar: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [location] = useLocation();
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implement search functionality
-    console.log('Search:', searchQuery);
-  };
+  const isActive = (path: string) => location === path;
 
   return (
-    <nav className="sticky top-0 z-50 bg-background border-b border-border">
-      <div className="container flex items-center justify-between h-16">
-        {/* Logo */}
+    <>
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-background border-b border-border h-16 flex items-center justify-between px-4">
         <Link href="/">
-          <a className="flex items-center gap-2 font-bold text-xl hover:opacity-80 transition-opacity">
+          <a className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">AI</span>
+              <span className="text-primary-foreground font-bold text-sm">AI</span>
             </div>
-            <span className="hidden sm:inline">BlogHub</span>
           </a>
         </Link>
-
-        {/* Search bar - desktop */}
-        <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-8">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search blogs..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4"
-            />
-          </div>
-        </form>
-
-        {/* Desktop menu */}
-        <div className="hidden md:flex items-center gap-4">
-          {isAuthenticated && (
-            <Link href="/create">
-              <Button variant="outline" size="sm" className="gap-2">
-                <PenTool className="w-4 h-4" />
-                Write
-              </Button>
-            </Link>
-          )}
-
-          {/* Theme toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="w-10 h-10"
-          >
-            {theme === 'light' ? (
-              <Moon className="w-4 h-4" />
-            ) : (
-              <Sun className="w-4 h-4" />
-            )}
-          </Button>
-
-          {isAuthenticated ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-xs font-bold">
-                    {user?.username?.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="hidden sm:inline text-sm">{user?.username}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link href={`/profile/${user?.id}`}>
-                    <a className="flex items-center gap-2 cursor-pointer">
-                      <span>Profile</span>
-                    </a>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard">
-                    <a className="flex items-center gap-2 cursor-pointer">
-                      <LayoutDashboard className="w-4 h-4" />
-                      <span>Dashboard</span>
-                    </a>
-                  </Link>
-                </DropdownMenuItem>
-                {user?.role === 'admin' && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/admin">
-                        <a className="flex items-center gap-2 cursor-pointer">
-                          <Settings className="w-4 h-4" />
-                          <span>Admin Panel</span>
-                        </a>
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="cursor-pointer">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="flex gap-2">
-              <Link href="/login">
-                <Button variant="outline" size="sm">
-                  Login
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button size="sm">
-                  Sign up
-                </Button>
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* Mobile menu button */}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
-        >
-          {isOpen ? (
-            <X className="w-6 h-6" />
-          ) : (
-            <Menu className="w-6 h-6" />
-          )}
+        <button onClick={() => setIsMobileOpen(!isMobileOpen)} className="p-2">
+          {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
-      {/* Mobile menu */}
-      {isOpen && (
-        <div className="md:hidden border-t border-border bg-background">
-          <div className="container py-4 space-y-4">
-            {/* Mobile search */}
-            <form onSubmit={handleSearch}>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search blogs..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4"
-                />
-              </div>
-            </form>
+      {/* Vertical Sidebar */}
+      <TooltipProvider>
+        <nav className={`fixed left-0 top-0 h-screen w-20 bg-sidebar border-r border-sidebar-border z-40 flex flex-col transition-transform duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+          {/* Logo */}
+          <div className="p-4 border-b border-sidebar-border flex items-center justify-center">
+            <Link href="/">
+              <a className="flex items-center justify-center hover:opacity-80 transition-opacity">
+                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                  <span className="text-primary-foreground font-bold">AI</span>
+                </div>
+              </a>
+            </Link>
+          </div>
+
+          {/* Navigation Links */}
+          <div className="flex-1 overflow-y-auto py-4">
+            <div className="space-y-2 flex flex-col items-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href="/">
+                    <a className={`flex items-center justify-center w-12 h-12 rounded-lg transition-colors ${isActive('/') ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent'}`}>
+                      <Home className="w-5 h-5" />
+                    </a>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Home</p>
+                </TooltipContent>
+              </Tooltip>
+
+              {isAuthenticated && (
+                <>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link href="/create">
+                        <a className={`flex items-center justify-center w-12 h-12 rounded-lg transition-colors ${isActive('/create') ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent'}`}>
+                          <PenTool className="w-5 h-5" />
+                        </a>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>Write</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link href="/dashboard">
+                        <a className={`flex items-center justify-center w-12 h-12 rounded-lg transition-colors ${isActive('/dashboard') ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent'}`}>
+                          <LayoutDashboard className="w-5 h-5" />
+                        </a>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>Dashboard</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {user?.role === 'admin' && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link href="/admin">
+                          <a className={`flex items-center justify-center w-12 h-12 rounded-lg transition-colors ${isActive('/admin') ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent'}`}>
+                            <Settings className="w-5 h-5" />
+                          </a>
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p>Admin Panel</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom Section */}
+          <div className="p-4 border-t border-sidebar-border space-y-2 flex flex-col items-center">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className="w-12 h-12"
+                >
+                  {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</p>
+              </TooltipContent>
+            </Tooltip>
 
             {isAuthenticated ? (
-              <div className="space-y-2">
-                <Link href="/create">
-                  <Button variant="outline" size="sm" className="w-full gap-2">
-                    <PenTool className="w-4 h-4" />
-                    Write
-                  </Button>
-                </Link>
-                <Link href={`/profile/${user?.id}`}>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Profile
-                  </Button>
-                </Link>
-                <Link href="/dashboard">
-                  <Button variant="outline" size="sm" className="w-full">
-                    Dashboard
-                  </Button>
-                </Link>
-                {user?.role === 'admin' && (
-                  <Link href="/admin">
-                    <Button variant="outline" size="sm" className="w-full">
-                      Admin Panel
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link href={`/profile/${user?.id}`}>
+                      <a className={`flex items-center justify-center w-12 h-12 rounded-lg transition-colors ${isActive(`/profile/${user?.id}`) ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent'}`}>
+                        <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-xs font-bold">
+                          {user?.username?.charAt(0).toUpperCase()}
+                        </div>
+                      </a>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Profile</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={logout}
+                      className="w-12 h-12 text-destructive hover:text-destructive"
+                    >
+                      <LogOut className="w-5 h-5" />
                     </Button>
-                  </Link>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={logout}
-                  className="w-full"
-                >
-                  Logout
-                </Button>
-              </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Logout</p>
+                  </TooltipContent>
+                </Tooltip>
+              </>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2 flex flex-col items-center">
                 <Link href="/login">
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button variant="outline" size="sm" className="text-xs px-2">
                     Login
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button size="sm" className="w-full">
+                  <Button size="sm" className="text-xs px-2">
                     Sign up
                   </Button>
                 </Link>
               </div>
             )}
           </div>
-        </div>
+        </nav>
+      </TooltipProvider>
+
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-30"
+          onClick={() => setIsMobileOpen(false)}
+        />
       )}
-    </nav>
+    </>
   );
 };

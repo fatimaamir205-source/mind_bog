@@ -44,12 +44,11 @@ export default function Profile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen bg-background flex">
         <Navbar />
-        <main className="flex-1 flex items-center justify-center">
+        <main className="flex-1 md:ml-20 pt-16 md:pt-0 flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </main>
-        <Footer />
       </div>
     );
   }
@@ -111,9 +110,9 @@ export default function Profile() {
   const isOwnProfile = currentUser && String(currentUser.id) === String(userId);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex">
       <Navbar />
-      <main className="flex-1">
+      <main className="flex-1 md:ml-20 pt-16 md:pt-0">
         <div className="h-32 bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-border" />
 
         <div className="container -mt-16 relative z-10 pb-12">
@@ -230,7 +229,6 @@ export default function Profile() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

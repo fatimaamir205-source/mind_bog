@@ -145,9 +145,9 @@ export default function CreateBlog() {
   const isBusy = isSubmitting || isUploadingImage;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex">
       <Navbar />
-      <main className="flex-1">
+      <main className="flex-1 md:ml-20 pt-16 md:pt-0">
         <div className="container py-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">Write a New Story</h1>
@@ -516,7 +516,6 @@ export default function CreateBlog() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }
