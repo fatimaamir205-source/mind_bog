@@ -83,6 +83,10 @@ export const aiAPI = {
   getBlogAnalysis: (blogId: string | number) => api.get(`/ai/blog/${blogId}/analysis`),
   factCheckContent: (title: string, content: string) =>
     api.post('/ai/fact-check', { title, content }),
+  generateContent: (prompt: string) =>
+    api.post('/ai/generate', { prompt }),
+  generateImage: (prompt: string) =>
+    api.post('/ai/generate-image', { prompt }),
 };
 
 // Analytics — /api/analytics/*
@@ -133,6 +137,11 @@ export const trendingAPI = {
   getRecommendedAuthors: () => api.get('/trending/authors'),
   getTrendingBlogs: () => api.get('/trending/blogs'),
   getAllTrending: () => api.get('/trending/all'),
+};
+
+// Search — /api/search
+export const searchAPI = {
+  search: (query: string) => api.get('/search', { params: { q: query } }),
 };
 
 export default api;

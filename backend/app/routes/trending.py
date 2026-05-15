@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from app import db
 from app.models import Blog, User, Like, Comment, Follow
 from sqlalchemy import func, desc
@@ -8,16 +8,10 @@ trending_bp = Blueprint('trending', __name__)
 
 @trending_bp.route('/topics', methods=['GET'])
 def get_trending_topics():
-    """Get trending topics based on recent blog tags"""
+    """Get trending topics based on blog tags (all time)"""
     try:
-        # Get blogs from last 30 days
-        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-        
-        # Get all tags from recent published blogs
-        recent_blogs = Blog.query.filter(
-            Blog.status == 'published',
-            Blog.created_at >= thirty_days_ago
-        ).all()
+        # Get all published blogs
+        recent_blogs = Blog.query.filter(Blog.status == 'published').all()
         
         # Count tag occurrences with engagement metrics
         tag_stats = {}
@@ -62,12 +56,9 @@ def get_trending_topics():
 
 @trending_bp.route('/authors', methods=['GET'])
 def get_recommended_authors():
-    """Get recommended authors based on engagement and activity"""
+    """Get recommended authors based on engagement and activity (all time)"""
     try:
-        # Get authors with published blogs in last 60 days
-        sixty_days_ago = datetime.utcnow() - timedelta(days=60)
-        
-        # Query authors with their stats
+        # Query authors with their stats (all time)
         authors = db.session.query(
             User.id,
             User.username,
@@ -82,7 +73,6 @@ def get_recommended_authors():
         .outerjoin(Follow, Follow.following_id == User.id)\
         .filter(
             Blog.status == 'published',
-            Blog.created_at >= sixty_days_ago,
             User.is_active == True
         ).group_by(User.id, User.username).all()
         
@@ -126,33 +116,26 @@ def get_recommended_authors():
 
 @trending_bp.route('/blogs', methods=['GET'])
 def get_trending_blogs():
-    """Get trending blogs based on recent engagement"""
+    """Get trending blogs based on views and likes (all time) with pagination"""
     try:
-        # Get blogs from last 7 days
-        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
         
-        # Query blogs with engagement metrics
+        # Query all published blogs with engagement metrics
         blogs = db.session.query(
             Blog,
             func.count(Like.id).label('likes_count'),
             func.count(Comment.id).label('comments_count')
         ).outerjoin(Like, Like.blog_id == Blog.id)\
         .outerjoin(Comment, Comment.blog_id == Blog.id)\
-        .filter(
-            Blog.status == 'published',
-            Blog.created_at >= seven_days_ago
-        ).group_by(Blog.id).all()
+        .filter(Blog.status == 'published')\
+        .group_by(Blog.id).all()
         
-        # Calculate trending scores
+        # Calculate trending scores based on views and likes
         trending_blogs = []
         for blog, likes_count, comments_count in blogs:
-            # Calculate recency factor (newer = higher score)
-            age_hours = (datetime.utcnow() - blog.created_at).total_seconds() / 3600
-            recency_factor = max(1, 168 - age_hours) / 168  # 168 hours = 7 days
-            
-            # Calculate engagement score
-            base_score = (blog.views * 1) + (likes_count * 10) + (comments_count * 5)
-            trending_score = base_score * recency_factor
+            # Calculate engagement score: prioritize views and likes
+            trending_score = (blog.views * 2) + (likes_count * 10) + (comments_count * 3)
             
             # Get author info
             author = User.query.get(blog.user_id)
@@ -176,11 +159,20 @@ def get_trending_blogs():
                 'trending_score': round(trending_score, 2)
             })
         
-        # Sort by trending score and return top 10
+        # Sort by trending score
         trending_blogs.sort(key=lambda x: x['trending_score'], reverse=True)
         
+        # Apply pagination
+        total = len(trending_blogs)
+        start = (page - 1) * per_page
+        end = start + per_page
+        paginated_blogs = trending_blogs[start:end]
+        
         return jsonify({
-            'blogs': trending_blogs[:10]
+            'blogs': paginated_blogs,
+            'total': total,
+            'pages': (total + per_page - 1) // per_page,
+            'current_page': page
         }), 200
         
     except Exception as e:
@@ -190,12 +182,8 @@ def get_trending_blogs():
 def get_all_trending():
     """Get all trending data in one request"""
     try:
-        # Get trending topics
-        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-        recent_blogs = Blog.query.filter(
-            Blog.status == 'published',
-            Blog.created_at >= thirty_days_ago
-        ).all()
+        # Get trending topics (all time)
+        recent_blogs = Blog.query.filter(Blog.status == 'published').all()
         
         tag_stats = {}
         for blog in recent_blogs:
@@ -219,8 +207,7 @@ def get_all_trending():
             })
         trending_topics.sort(key=lambda x: x['score'], reverse=True)
         
-        # Get recommended authors
-        sixty_days_ago = datetime.utcnow() - timedelta(days=60)
+        # Get recommended authors (all time)
         authors = db.session.query(
             User.id,
             User.username,
@@ -233,7 +220,6 @@ def get_all_trending():
         .outerjoin(Follow, Follow.following_id == User.id)\
         .filter(
             Blog.status == 'published',
-            Blog.created_at >= sixty_days_ago,
             User.is_active == True
         ).group_by(User.id, User.username).all()
         
@@ -259,25 +245,20 @@ def get_all_trending():
             })
         author_list.sort(key=lambda x: x['score'], reverse=True)
         
-        # Get trending blogs
-        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        # Get trending blogs (all time, sorted by views and likes)
         blogs = db.session.query(
             Blog,
             func.count(Like.id).label('likes_count'),
             func.count(Comment.id).label('comments_count')
         ).outerjoin(Like, Like.blog_id == Blog.id)\
         .outerjoin(Comment, Comment.blog_id == Blog.id)\
-        .filter(
-            Blog.status == 'published',
-            Blog.created_at >= seven_days_ago
-        ).group_by(Blog.id).all()
+        .filter(Blog.status == 'published')\
+        .group_by(Blog.id).all()
         
         trending_blogs = []
         for blog, likes_count, comments_count in blogs:
-            age_hours = (datetime.utcnow() - blog.created_at).total_seconds() / 3600
-            recency_factor = max(1, 168 - age_hours) / 168
-            base_score = (blog.views * 1) + (likes_count * 10) + (comments_count * 5)
-            trending_score = base_score * recency_factor
+            # Calculate engagement score: prioritize views and likes
+            trending_score = (blog.views * 2) + (likes_count * 10) + (comments_count * 3)
             
             author = User.query.get(blog.user_id)
             avatar_url = author.profile.avatar_url if author and author.profile else None

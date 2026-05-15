@@ -65,6 +65,7 @@ def create_app():
     from app.routes.users import users_bp
     from app.routes.analytics import analytics_bp
     from app.routes.trending import trending_bp
+    from app.routes.search import search_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(blogs_bp, url_prefix='/api/blogs')
@@ -76,5 +77,6 @@ def create_app():
     app.register_blueprint(users_bp, url_prefix='/api/users')
     app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
     app.register_blueprint(trending_bp, url_prefix='/api/trending')
+    app.register_blueprint(search_bp, url_prefix='/api/search')
     
     return app

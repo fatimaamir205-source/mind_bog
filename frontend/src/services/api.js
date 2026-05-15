@@ -95,4 +95,12 @@ export const adminAPI = {
   deleteBlog: (blogId) => api.delete(`/admin/blogs/${blogId}`),
 };
 
+// Trending API
+export const trendingAPI = {
+  getTrendingBlogs: (params) => api.get('/trending/blogs', { params }),
+  getTrendingTopics: () => api.get('/trending/topics'),
+  getRecommendedAuthors: () => api.get('/trending/authors'),
+  getAllTrending: () => api.get('/trending/all'),
+};
+
 export default api;

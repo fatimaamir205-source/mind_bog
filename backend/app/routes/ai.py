@@ -74,3 +74,29 @@ def fact_check_content():
     return jsonify({
         'fact_check': fact_check_result
     }), 200
+
+@ai_bp.route('/generate', methods=['POST'])
+@jwt_required()
+def generate_content():
+    data = request.get_json()
+    
+    if not data.get('prompt'):
+        return jsonify({'error': 'Prompt is required'}), 400
+    
+    # Generate content based on prompt
+    generated_data = ai_service.generate_content(data['prompt'])
+    
+    return jsonify(generated_data), 200
+
+@ai_bp.route('/generate-image', methods=['POST'])
+@jwt_required()
+def generate_image():
+    data = request.get_json()
+    
+    if not data.get('prompt'):
+        return jsonify({'error': 'Prompt is required'}), 400
+    
+    # Generate image based on prompt
+    image_result = ai_service.generate_image(data['prompt'])
+    
+    return jsonify(image_result), 200

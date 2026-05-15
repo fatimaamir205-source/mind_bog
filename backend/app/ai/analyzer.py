@@ -4,7 +4,9 @@ import re
 class AIService:
     def __init__(self):
         self.api_key = os.getenv('OPENAI_API_KEY', '')
+        self.image_api_key = os.getenv('IMAGE_API_KEY', '')  # For image generation (e.g., DALL-E, Stability AI)
         self.use_mock = not self.api_key or self.api_key == ''
+        self.use_mock_image = not self.image_api_key or self.image_api_key == ''
         
         # Fake news indicators (keywords and patterns)
         self.fake_news_keywords = [
@@ -36,6 +38,22 @@ class AIService:
             return self._mock_fact_check(title, content)
         else:
             return self._openai_fact_check(title, content)
+    
+    def generate_content(self, prompt):
+        """Generate blog content based on user prompt"""
+        
+        if self.use_mock:
+            return self._mock_generate(prompt)
+        else:
+            return self._openai_generate(prompt)
+    
+    def generate_image(self, prompt):
+        """Generate image based on user prompt"""
+        
+        if self.use_mock_image:
+            return self._mock_generate_image(prompt)
+        else:
+            return self._openai_generate_image(prompt)
     
     def _mock_analysis(self, title, content):
         """Mock AI analysis when OpenAI API is not available"""
@@ -244,5 +262,113 @@ Respond in JSON format with keys: credibility_score, is_fake_news, fact_check_fe
         except Exception as e:
             # Fallback to mock if OpenAI fails
             return self._mock_fact_check(title, content)
+    
+    def _mock_generate(self, prompt):
+        """Mock content generation when OpenAI API is not available"""
+        
+        # Extract topic from prompt
+        topic = prompt[:100] if len(prompt) > 100 else prompt
+        
+        # Generate title
+        title = f"Understanding {topic.title()}: A Comprehensive Guide"
+        
+        # Generate excerpt
+        excerpt = f"Explore the essential aspects of {topic.lower()} and discover how it impacts our world today. Learn about key principles, practical applications, and future trends."
+        
+        # Generate solid, informative content
+        content = f"""In this comprehensive exploration of {topic.lower()}, we delve into the fundamental aspects that make this subject both relevant and impactful in today's world.
+
+Understanding the core principles is essential before we can fully appreciate the broader implications. The foundational concepts provide a framework for analyzing how this topic influences various aspects of our lives and work. By examining these fundamentals, we gain insight into the mechanisms that drive change and innovation in this field.
+
+The current landscape is characterized by rapid evolution and continuous development. Recent trends indicate a growing interest and investment in this area, with experts and practitioners alike recognizing its significance. Industry leaders are implementing new strategies and approaches that leverage the latest insights and technologies. This dynamic environment creates both opportunities and challenges for those seeking to stay informed and competitive.
+
+Practical applications demonstrate the real-world value of understanding this subject. Organizations across various sectors are finding innovative ways to implement these concepts, resulting in measurable improvements in efficiency, effectiveness, and outcomes. Case studies reveal that successful implementation requires careful planning, adequate resources, and a commitment to ongoing learning and adaptation.
+
+The benefits of engaging with this topic are substantial and multifaceted. Individuals and organizations that invest time in developing expertise gain competitive advantages, enhanced decision-making capabilities, and improved problem-solving skills. The knowledge acquired enables more strategic thinking and better anticipation of future trends and developments.
+
+However, it's important to acknowledge the challenges that come with this territory. The complexity of the subject matter can present a steep learning curve for newcomers. Resource requirements, both in terms of time and investment, must be carefully considered. Implementation often requires organizational change and stakeholder buy-in, which can be difficult to achieve. Ongoing maintenance and updates are necessary to ensure continued relevance and effectiveness.
+
+Looking toward the future, the trajectory suggests continued growth and evolution. Emerging technologies and methodologies promise to expand possibilities and create new opportunities. Staying informed about these developments is crucial for anyone seeking to remain at the forefront of this field.
+
+In conclusion, {topic.lower()} represents a critical area of focus that warrants serious attention and study. By developing a deep understanding of the principles, staying current with trends, and applying knowledge practically, individuals and organizations can position themselves for success. The journey requires dedication and continuous learning, but the rewards make the effort worthwhile. As we move forward, maintaining curiosity and adaptability will be key to navigating the evolving landscape and maximizing the benefits this subject has to offer."""
+        
+        return {
+            'title': title,
+            'excerpt': excerpt,
+            'content': content
+        }
+    
+    def _openai_generate(self, prompt):
+        """Real OpenAI content generation"""
+        try:
+            import openai
+            openai.api_key = self.api_key
+            
+            system_prompt = """You are a professional blog writer who creates engaging, informative, and well-structured content. 
+You must respond with a JSON object containing three fields:
+1. "title": A compelling blog post title (50-70 characters)
+2. "excerpt": A brief summary/description (120-160 characters)
+3. "content": The full blog post content in solid paragraphs of flowing text
+
+For the content:
+- Write in a clear, accessible style with solid paragraphs of flowing text
+- DO NOT use markdown headers, bullet points, or numbered lists
+- Write in continuous prose with well-developed paragraphs
+- Include an introduction, develop the main ideas in body paragraphs, and provide a conclusion
+- Make the content informative, accurate, and engaging for readers with smooth transitions between ideas
+
+Respond ONLY with valid JSON in this exact format:
+{"title": "...", "excerpt": "...", "content": "..."}"""
+            
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Write a comprehensive blog post about: {prompt}. Return as JSON with title, excerpt, and content fields."}
+                ],
+                temperature=0.7,
+                max_tokens=1500
+            )
+            
+            import json
+            result = json.loads(response.choices[0].message.content)
+            return result
+            
+        except Exception as e:
+            # Fallback to mock if OpenAI fails
+            return self._mock_generate(prompt)
+    
+    def _mock_generate_image(self, prompt):
+        """Mock image generation - returns a placeholder"""
+        # Return a placeholder image URL (you can use a service like placeholder.com or unsplash)
+        return {
+            'image_url': f'https://via.placeholder.com/800x400/6366f1/ffffff?text={prompt[:50].replace(" ", "+")}',
+            'message': 'Mock image generated. Configure IMAGE_API_KEY in .env for real AI image generation.'
+        }
+    
+    def _openai_generate_image(self, prompt):
+        """Real AI image generation using DALL-E or other service"""
+        try:
+            import openai
+            openai.api_key = self.image_api_key or self.api_key
+            
+            # Using DALL-E 3 for image generation
+            response = openai.Image.create(
+                prompt=prompt,
+                n=1,
+                size="1024x1024",
+                model="dall-e-3"
+            )
+            
+            image_url = response.data[0].url
+            
+            return {
+                'image_url': image_url,
+                'message': 'Image generated successfully'
+            }
+            
+        except Exception as e:
+            # Fallback to mock if generation fails
+            return self._mock_generate_image(prompt)
 
 ai_service = AIService()

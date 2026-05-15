@@ -33,6 +33,9 @@ class Config:
     # OpenAI
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
     
+    # Image Generation API (DALL-E, Stability AI, etc.)
+    IMAGE_API_KEY = os.getenv('IMAGE_API_KEY', '')
+    
     # Flask
     SECRET_KEY = os.getenv('JWT_SECRET_KEY') or 'dev-secret-key'
     

@@ -7,9 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, Eye, Code, Save, Send, ImagePlus, X, Sparkles, TrendingUp, BookOpen, Search, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { AlertCircle, Eye, Code, Save, Send, ImagePlus, X, Sparkles, TrendingUp, BookOpen, Search, ShieldAlert, ShieldCheck, MessageSquare, Copy } from 'lucide-react';
 import { toast } from 'sonner';
-import { blogAPI, uploadAPI } from '@/services/api';
+import { blogAPI, uploadAPI, aiAPI } from '@/services/api';
 
 export default function CreateBlog() {
   const [, navigate] = useLocation();
@@ -27,6 +27,14 @@ export default function CreateBlog() {
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
   const [factCheckResult, setFactCheckResult] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showAIChat, setShowAIChat] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiResponse, setAiResponse] = useState<any>('');
+  const [isAIGenerating, setIsAIGenerating] = useState(false);
+  const [showImageOptions, setShowImageOptions] = useState(false);
+  const [showImagePrompt, setShowImagePrompt] = useState(false);
+  const [imagePrompt, setImagePrompt] = useState('');
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -47,6 +55,25 @@ export default function CreateBlog() {
     setImageFile(null);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleGenerateImage = async () => {
+    if (!imagePrompt.trim()) {
+      toast.error('Please enter an image description');
+      return;
+    }
+    setIsGeneratingImage(true);
+    try {
+      const res = await aiAPI.generateImage(imagePrompt);
+      setImagePreview(res.data.image_url);
+      setShowImagePrompt(false);
+      setImagePrompt('');
+      toast.success('Image generated successfully!');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to generate image');
+    } finally {
+      setIsGeneratingImage(false);
+    }
   };
 
   const submitBlog = async (status: 'draft' | 'published') => {
@@ -140,6 +167,33 @@ export default function CreateBlog() {
     }
   };
 
+  const handleAIGenerate = async () => {
+    if (!aiPrompt.trim()) {
+      toast.error('Please enter a topic or subject');
+      return;
+    }
+    setIsAIGenerating(true);
+    try {
+      const res = await aiAPI.generateContent(aiPrompt);
+      setAiResponse(res.data);
+      toast.success('Content generated!');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to generate content');
+    } finally {
+      setIsAIGenerating(false);
+    }
+  };
+
+  const handleCopyToContent = () => {
+    if (aiResponse.title) setTitle(aiResponse.title);
+    if (aiResponse.excerpt) setExcerpt(aiResponse.excerpt);
+    if (aiResponse.content) setContent(aiResponse.content);
+    setShowAIChat(false);
+    setAiPrompt('');
+    setAiResponse('');
+    toast.success('Content copied to editor!');
+  };
+
   const wordCount = content.split(/\s+/).filter((w) => w.length > 0).length;
   const readTime = Math.ceil(wordCount / 200);
   const isBusy = isSubmitting || isUploadingImage;
@@ -170,15 +224,96 @@ export default function CreateBlog() {
                       <X className="w-4 h-4" />
                     </button>
                   </div>
+                ) : showImageOptions ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowImageOptions(false);
+                          setShowImagePrompt(true);
+                        }}
+                        className="h-32 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                      >
+                        <Sparkles className="w-8 h-8" />
+                        <span className="text-sm font-medium">Generate with AI</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowImageOptions(false);
+                          fileInputRef.current?.click();
+                        }}
+                        className="h-32 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                      >
+                        <ImagePlus className="w-8 h-8" />
+                        <span className="text-sm font-medium">Upload from Device</span>
+                      </button>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowImageOptions(false)}
+                      className="w-full"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : showImagePrompt ? (
+                  <div className="space-y-3 border-2 border-dashed border-border rounded-lg p-4">
+                    <div className="flex items-center gap-2 text-primary mb-2">
+                      <Sparkles className="w-5 h-5" />
+                      <span className="font-semibold">Generate Image with AI</span>
+                    </div>
+                    <Textarea
+                      placeholder="Describe the image you want to generate (e.g., A futuristic city with flying cars at sunset)..."
+                      value={imagePrompt}
+                      onChange={(e) => setImagePrompt(e.target.value)}
+                      rows={3}
+                      disabled={isGeneratingImage}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        onClick={handleGenerateImage}
+                        disabled={isGeneratingImage || !imagePrompt.trim()}
+                        className="flex-1 gap-2"
+                      >
+                        {isGeneratingImage ? (
+                          <>
+                            <Sparkles className="w-4 h-4 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4" />
+                            Generate Image
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowImagePrompt(false);
+                          setImagePrompt('');
+                        }}
+                        disabled={isGeneratingImage}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => setShowImageOptions(true)}
                     className="w-full h-40 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
                   >
                     <ImagePlus className="w-8 h-8" />
-                    <span className="text-sm">Click to upload cover image</span>
-                    <span className="text-xs">JPG, PNG, GIF, WEBP · max 5MB</span>
+                    <span className="text-sm">Add cover image</span>
+                    <span className="text-xs">Generate with AI or upload from device</span>
                   </button>
                 )}
                 <input
@@ -515,6 +650,100 @@ export default function CreateBlog() {
             </div>
           </div>
         </div>
+
+        {/* Floating Action Button */}
+        <button
+          onClick={() => setShowAIChat(!showAIChat)}
+          className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 z-50"
+        >
+          {showAIChat ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+        </button>
+
+        {/* AI Chat Panel */}
+        {showAIChat && (
+          <div className="fixed bottom-24 right-8 w-96 max-w-[calc(100vw-4rem)] bg-card border border-border rounded-lg shadow-2xl z-50 overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-4 text-white">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5" />
+                <h3 className="font-bold">AI Writing Assistant</h3>
+              </div>
+              <p className="text-xs mt-1 opacity-90">Tell me what you want to write about</p>
+            </div>
+
+            <div className="p-4 space-y-4 max-h-96 overflow-y-auto">
+              {!aiResponse ? (
+                <div className="space-y-3">
+                  <Textarea
+                    placeholder="E.g., Write about the benefits of artificial intelligence in healthcare..."
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    rows={4}
+                    disabled={isAIGenerating}
+                  />
+                  <Button
+                    onClick={handleAIGenerate}
+                    disabled={isAIGenerating || !aiPrompt.trim()}
+                    className="w-full gap-2"
+                  >
+                    {isAIGenerating ? (
+                      <>
+                        <Sparkles className="w-4 h-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Generate Content
+                      </>
+                    )}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="bg-muted rounded-lg p-4 max-h-64 overflow-y-auto space-y-3">
+                    {aiResponse.title && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">Title:</p>
+                        <p className="text-sm font-bold">{aiResponse.title}</p>
+                      </div>
+                    )}
+                    {aiResponse.excerpt && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">Excerpt:</p>
+                        <p className="text-sm">{aiResponse.excerpt}</p>
+                      </div>
+                    )}
+                    {aiResponse.content && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">Content:</p>
+                        <p className="text-sm whitespace-pre-wrap line-clamp-6">{aiResponse.content}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleCopyToContent}
+                      className="flex-1 gap-2"
+                    >
+                      <Copy className="w-4 h-4" />
+                      Copy to Editor
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setAiResponse('');
+                        setAiPrompt('');
+                      }}
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      New
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
