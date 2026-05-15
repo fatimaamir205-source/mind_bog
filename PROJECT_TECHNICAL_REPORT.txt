@@ -1,0 +1,1771 @@
+================================================================================
+                    PROJECT TECHNICAL REPORT
+                    AI-Powered Blogging Platform
+================================================================================
+
+Date: 2026-05-15
+Project Root: D:\ty_now\mind_bog
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+1.  PROJECT OVERVIEW
+2.  SYSTEM ARCHITECTURE
+3.  FRONTEND (frontend_v2/)
+    3.1  Technology Stack
+    3.2  Directory Structure
+    3.3  Dependencies (production)
+    3.4  Dependencies (dev)
+    3.5  Application Entry & Configuration
+    3.6  Component Hierarchy
+    3.7  Routing (Wouter)
+    3.8  State Management (Context API)
+    3.9  API Integration (Axios)
+    3.10 Pages & Views
+    3.11 UI Components (shadcn/ui)
+    3.12 Styling & Theming (Tailwind CSS)
+    3.13 Custom Hooks
+    3.14 Internationalization (i18n)
+    3.15 Authentication Flow (Client-Side)
+    3.16 Build & Deployment
+    3.17 Testing Status
+4.  BACKEND (backend/)
+    4.1  Technology Stack
+    4.2  Directory Structure
+    4.3  Dependencies
+    4.4  Application Configuration
+    4.5  Entry Point
+    4.6  Complete API Endpoints Reference
+    4.7  Authentication & Authorization
+    4.8  Middleware
+    4.9  Database Models (SQLAlchemy)
+    4.10 AI Integration
+    4.11 File Upload System
+    4.13  Trending System
+    4.12  Analytics System
+    4.14  Error Handling
+    4.15  Security Measures
+    4.16  Testing
+5.  DATABASE (database/)
+    5.1  Directory Structure
+    5.2  Complete Schema (All 12 Tables)
+    5.3  Migration Scripts
+    5.4  Seed Data
+    5.5  Configuration
+    5.6  Relationship to Backend Models
+6.  END-TO-END FEATURE FLOWS
+7.  API CONTRACT SUMMARY
+8.  KNOWN ISSUES & NOTES
+
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+  Project Name:  AI-Powered Blogging Platform (aliases: "AI Blog Platform",
+                 "BlogHub", "mind_bog")
+  Purpose:       A full-stack blogging platform with AI-powered content
+                 analysis, generation, fact-checking, and moderation.
+  Architecture:  Three-tier monorepo: React SPA frontend -> Flask REST API
+                 backend -> MySQL database
+  Package Mgr:   pnpm (frontend), pip (backend)
+  License:       MIT
+
+  Frontend URL (dev):   http://localhost:3000
+  Backend URL (dev):    http://localhost:5000
+  API Proxy:            Vite proxies /api -> localhost:5000
+
+
+================================================================================
+2. SYSTEM ARCHITECTURE
+================================================================================
+
+  +------------------------------------------------------------------+
+  |  BROWSER                                                         |
+  |  +------------------------------------------------------------+ |
+  |  |  React SPA (port 3000) - Vite Dev Server                   | |
+  |  |  - Wouter Router (client-side routing)                     | |
+  |  |  - Axios HTTP Client                                       | |
+  |  |  - Tailwind CSS / shadcn/ui UI                             | |
+  |  |  - React Context API (Auth, Theme, I18n)                   | |
+  |  +------------------------------------------------------------+ |
+  +------------------------------------------------------------------+
+       |  HTTP requests via Axios (JWT in Authorization header)
+       |  Dev: Vite proxies /api -> localhost:5000
+       v
+  +------------------------------------------------------------------+
+  |  Flask REST API (port 5000)                                     |
+  |  - Flask 2.3.0 + SQLAlchemy ORM                                 |
+  |  - Flask-JWT-Extended (JWT auth, 24h expiry)                    |
+  |  - Flask-Bcrypt (password hashing)                              |
+  |  - Flask-CORS (cross-origin enabled)                            |
+  +------------------------------------------------------------------+
+       |  SQLAlchemy ORM (PyMySQL driver)
+       |  Connection pool: pool_pre_ping=True, pool_recycle=300
+       v
+  +------------------------------------------------------------------+
+  |  MySQL Database (localhost:3306)                                |
+  |  Database: blog_platform                                        |
+  |  User: root / Password: (empty)                                 |
+  |  12 tables across 5 migration stages                            |
+  +------------------------------------------------------------------+
+
+  AI Integration:
+  +------------------------------------------------------------------+
+  |  OpenAI API (GPT-3.5-turbo + DALL-E 3)                          |
+  |  - Content analysis (quality, readability, grammar, SEO)        |
+  |  - Fact-checking / fake news detection                          |
+  |  - Content generation (title, excerpt, full post)               |
+  |  - Image generation from text prompt                            |
+  |  - Complete mock fallback when API key is absent                |
+  +------------------------------------------------------------------+
+
+
+================================================================================
+3. FRONTEND (frontend_v2/)
+================================================================================
+
+3.1 TECHNOLOGY STACK
+------------------------------------------------------------------------------
+  Framework:         React 19.2.1
+  Language:          TypeScript 5.6.3
+  Build Tool:        Vite 7.1.7
+  CSS Framework:     Tailwind CSS 4.1.14
+  UI Library:        shadcn/ui (New York style, Radix primitives)
+  Routing:           Wouter 3.3.5 (patched)
+  HTTP Client:       Axios 1.12.0
+  State Management:  React Context API (3 contexts)
+  Forms:             react-hook-form 7.64.0 + zod 4.1.12
+  Charts:            Recharts 2.15.2
+  Animations:        Framer Motion 12.23.22
+  Notifications:     Sonner 2.0.7
+  Icons:             Lucide React 0.453.0
+
+3.2 DIRECTORY STRUCTURE
+------------------------------------------------------------------------------
+frontend_v2/
+  client/
+    index.html
+    src/
+      App.tsx                        # Root component with routing
+      main.tsx                       # Entry point (mount React app)
+      index.css                      # Global styles + Tailwind directives
+      const.ts                       # Client constants
+      components/
+        AdminSidebar.tsx             # Admin navigation sidebar
+        BlogCard.tsx                 # Blog post card component
+        CommentSection.tsx           # Comments with CRUD + like
+        DataTable.tsx                # Reusable table with actions
+        ErrorBoundary.tsx            # React error boundary
+        Footer.tsx                   # Site footer
+        Loader.tsx                   # Loading spinners & skeletons
+        ManusDialog.tsx              # "Login with Manus" dialog
+        Map.tsx                      # Google Maps integration
+        Navbar.tsx                   # Navigation sidebar/header
+        ProtectedRoute.tsx           # Auth guard component
+        StatsCard.tsx                # Admin stat card
+        ui/                          # 51 shadcn/ui components
+      contexts/
+        AuthContext.tsx              # Authentication state
+        I18nContext.tsx              # Internationalization
+        ThemeContext.tsx             # Light/dark theme
+      hooks/
+        useAuth.ts                  # Auth context consumer hook
+        useComposition.ts           # IME composition handling (CJK)
+        useFetch.ts                 # Generic data fetching hook
+        useMobile.tsx               # Mobile viewport detection
+        usePersistFn.ts             # Stable function reference
+      i18n/
+        translations.ts             # EN/ZH translations
+      lib/
+        utils.ts                    # cn() class merge utility
+      pages/
+        admin/
+          AdminDashboard.tsx        # Admin overview with charts
+          ManageBlogs.tsx           # Blog moderation table
+          ManageUsers.tsx           # User management table
+          Reports.tsx               # Content reports management
+          Settings.tsx              # Platform settings (tabs)
+        BlogDetails.tsx             # Full blog post view
+        CreateBlog.tsx              # Blog editor with AI features
+        Dashboard.tsx               # User dashboard
+        EditBlog.tsx                # Blog edit page
+        Home.tsx                    # Blog feed with search/trending
+        Login.tsx                   # Authentication form
+        NotFound.tsx                # 404 page
+        Profile.tsx                 # User profile page
+        Register.tsx                # Registration form
+      services/
+        api.ts                      # Axios instance + all API functions
+  server/
+    index.ts                        # Express production server
+  shared/
+    const.ts                        # Shared constants
+  patches/
+    wouter@3.7.1.patch              # Route collection patch
+  components.json                   # shadcn/ui configuration
+  package.json
+  tsconfig.json
+  tsconfig.node.json
+  vite.config.ts
+
+3.3 DEPENDENCIES (production)
+------------------------------------------------------------------------------
+  @hookform/resolvers          ^5.2.2     Form validation resolvers
+  @radix-ui/*                   Various    Accessible UI primitives (28 packages)
+  axios                        ^1.12.0    HTTP client
+  class-variance-authority     ^0.7.1     CSS variant system
+  clsx                         ^2.1.1     Class name utility
+  cmdk                         ^1.1.1     Command menu
+  embla-carousel-react         ^8.6.0     Carousel component
+  express                      ^4.21.2    Production server
+  framer-motion                ^12.23.22  Animations
+  input-otp                    ^1.4.2     OTP input
+  lucide-react                 ^0.453.0   Icons
+  nanoid                       ^5.1.5     ID generation
+  next-themes                  ^0.4.6     Theme management
+  react                        ^19.2.1    UI framework
+  react-day-picker             ^9.11.1    Date picker
+  react-dom                    ^19.2.1    React DOM
+  react-hook-form              ^7.64.0    Form state management
+  react-resizable-panels       ^3.0.6     Resizable panels
+  recharts                     ^2.15.2    Charts
+  sonner                       ^2.0.7     Toast notifications
+  streamdown                   ^1.4.0     Markdown streaming
+  tailwind-merge               ^3.3.1     Tailwind class merging
+  tailwindcss-animate          ^1.0.7     Animation utilities
+  vaul                         ^1.1.2     Drawer component
+  wouter                       ^3.3.5     Client-side router (patched)
+  zod                          ^4.1.12    Schema validation
+
+3.4 DEPENDENCIES (dev)
+------------------------------------------------------------------------------
+  @builder.io/vite-plugin-jsx-loc  ^0.1.1   JSX location plugin
+  @tailwindcss/typography          ^0.5.15  Prose typography plugin
+  @tailwindcss/vite                ^4.1.3   Tailwind Vite plugin
+  @types/express                   4.17.21
+  @types/google.maps               ^3.58.1
+  @types/node                      ^24.7.0
+  @types/react                     ^19.2.1
+  @types/react-dom                 ^19.2.1
+  @vitejs/plugin-react             ^5.0.4   React Fast Refresh
+  add                              ^2.0.6
+  autoprefixer                     10.4.20
+  esbuild                          ^0.25.0  Server bundler
+  pnpm                             10.15.1
+  postcss                          8.4.47
+  prettier                         ^3.6.2   Code formatter
+  tailwindcss                      ^4.1.14
+  tsx                              ^4.19.1  TypeScript execution
+  tw-animate-css                   ^1.4.0   Animation CSS
+  typescript                       5.6.3
+  vite                             ^7.1.7   Build tool
+  vite-plugin-manus-runtime        ^0.0.57
+  vitest                           ^2.1.4   (NOT configured)
+
+3.5 APPLICATION ENTRY & CONFIGURATION
+------------------------------------------------------------------------------
+  Entry point:    client/src/main.tsx
+  Root component: client/src/App.tsx
+
+  App.tsx wraps the app in:
+    <ErrorBoundary>
+      <ThemeProvider>
+        <I18nProvider>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />            (Sonner toast notifications)
+              <Router>               (Wouter Switch/Routes)
+                <Route path="/" component={Home} />
+                <Route path="/login" component={Login} />
+                <Route path="/register" component={Register} />
+                <Route path="/blog/:id" component={BlogDetails} />
+                <Route path="/profile/:id" component={Profile} />
+                <ProtectedRoute path="/create"><CreateBlog /></ProtectedRoute>
+                <ProtectedRoute path="/edit/:id"><EditBlog /></ProtectedRoute>
+                <ProtectedRoute path="/dashboard"><Dashboard /></ProtectedRoute>
+                <ProtectedRoute path="/admin" adminOnly>
+                  <AdminDashboard />
+                </ProtectedRoute>
+                ... admin sub-routes ...
+                <Route><NotFound /></Route>
+              </Router>
+            </TooltipProvider>
+          </AuthProvider>
+        </I18nProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
+
+3.6 COMPONENT HIERARCHY
+------------------------------------------------------------------------------
+  Root
+  +-- ErrorBoundary
+      +-- ThemeProvider (next-themes)
+          +-- I18nProvider
+              +-- AuthProvider
+                  +-- TooltipProvider (Radix)
+                      +-- Toaster (Sonner)
+                      +-- Wouter Router
+                          |-- Navbar (persistent sidebar/header)
+                          |-- Footer (persistent footer)
+                          |-- Pages (routed components)
+                              |-- Home
+                              |   |-- BlogCard (many)
+                              |   |-- Search bar
+                              |   |-- Trending topics sidebar
+                              |   |-- Recommended authors sidebar
+                              |-- Login / Register
+                              |-- BlogDetails
+                              |   |-- Blog content
+                              |   |-- CommentSection
+                              |-- Profile
+                              |   |-- BlogCard (user's stories)
+                              |-- CreateBlog / EditBlog
+                              |   |-- Cover image upload/generate
+                              |   |-- Rich content editor
+                              |   |-- Tag input
+                              |   |-- AI analysis panel
+                              |   |-- Fact-check panel
+                              |   |-- AI writing assistant
+                              |-- Dashboard (user)
+                              |   |-- StatsCard (4x)
+                              |   |-- DataTable (blogs)
+                              |-- Admin pages
+                              |   |-- AdminSidebar
+                              |   |-- AdminDashboard
+                              |   |   |-- StatsCard (4x)
+                              |   |   |-- Recharts (line + bar)
+                              |   |-- ManageUsers (DataTable)
+                              |   |-- ManageBlogs (DataTable)
+                              |   |-- Reports (DataTable)
+                              |   |-- Settings (tabbed form)
+                              |-- NotFound
+
+3.7 ROUTING (Wouter)
+------------------------------------------------------------------------------
+  Path                  Component           Access        Protection
+  --------------------  ------------------  ------------  ------------------
+  /                     Home                Public        -
+  /login                Login               Public        Redirects if auth'd
+  /register             Register            Public        Redirects if auth'd
+  /blog/:id             BlogDetails         Public        -
+  /profile/:id          Profile             Public        -
+  /create               CreateBlog          Authenticated ProtectedRoute
+  /edit/:id             EditBlog            Authenticated ProtectedRoute
+  /dashboard            Dashboard           Authenticated ProtectedRoute
+  /admin                AdminDashboard      Admin         ProtectedRoute
+  /admin/users          ManageUsers         Admin         ProtectedRoute
+  /admin/blogs          ManageBlogs         Admin         ProtectedRoute
+  /admin/reports        Reports             Admin         ProtectedRoute
+  /admin/settings       Settings            Admin         ProtectedRoute
+  /404                  NotFound            Public        -
+  * (catch-all)         NotFound            Public        -
+
+3.8 STATE MANAGEMENT (Context API)
+------------------------------------------------------------------------------
+  AUTH CONTEXT (AuthContext.tsx):
+    State:
+      user: User | null          - Current user object
+      token: string | null       - JWT access token
+      isLoading: boolean         - Initial auth check loading
+      isAuthenticated: boolean   - Derived from user && token
+    Actions:
+      login(email, password)     - POST /auth/login, stores token+user
+      register(username, email,  - POST /auth/register, then auto-login
+                 password)
+      logout()                   - POST /auth/logout, clears localStorage
+      setUser(user)              - Manual user update
+    Persistence: localStorage (keys: 'token', 'user')
+    Auto-restore: On mount, checks localStorage
+
+  THEME CONTEXT (ThemeContext.tsx):
+    State:    theme ('light' | 'dark')
+    Actions:  toggleTheme()
+    Config:   defaultTheme='light', switchable=true
+    Persistence: localStorage, applies 'dark' class to <html>
+
+  I18N CONTEXT (I18nContext.tsx):
+    State:      language ('en' | 'zh')
+    Actions:    setLanguage(lang), t(key) -> translated string
+    Structure:  Dot-notation key lookup (e.g., t('nav.home'))
+    Languages:  English (en), Chinese (zh)
+    Categories: nav, home, auth, editor, common, ...
+
+3.9 API INTEGRATION (Axios)
+------------------------------------------------------------------------------
+  Base instance (api.ts):
+    baseURL:    import.meta.env.VITE_API_URL || '/api'
+    headers:    Content-Type: application/json
+
+  Request interceptor:
+    Reads token from localStorage
+    Sets Authorization: Bearer <token>
+
+  Response interceptor:
+    On 401: clears localStorage, redirects to /login
+
+  API service modules (all in api.ts):
+    authAPI:      login, register, logout, getProfile, updateProfile
+    blogAPI:      list, get, create, update, delete, like, bookmark,
+                  myBlogs, bookmarks
+    commentAPI:   getByBlog, create, delete, like
+    userAPI:      getProfile, getUserBlogs, follow, unfollow,
+                  followingBlogs, trending
+    aiAPI:        analyze, getBlogAnalysis, factCheck, generate,
+                  generateImage
+    analyticsAPI: user, blog, admin
+    adminAPI:     stats, listUsers, toggleActive, updateRole, deleteUser,
+                  listBlogs, approveBlog, rejectBlog, deleteBlog,
+                  listReports, resolveReport, getSettings, updateSettings
+    uploadAPI:    uploadImage
+    trendingAPI:  topics, authors, blogs, all
+    searchAPI:    search
+
+  Vite Dev Proxy (vite.config.ts):
+    /api       -> http://localhost:5000
+    /uploads   -> http://localhost:5000
+
+3.10 PAGES & VIEWS
+------------------------------------------------------------------------------
+  HOME (/):
+    - Hero section with gradient background, CTA button
+    - Tabs: "Recent" / "Trending" blog feeds
+    - Search bar (real-time) with blog+user results
+    - Sidebar: trending topics (tag pills), recommended authors
+    - BlogCard grid (3 columns xl, responsive)
+    - Like/unlike toggle on cards
+    - Loading skeletons, empty states
+
+  LOGIN (/login):
+    - Email + password form with validation
+    - "Remember me" checkbox, "Forgot password?" link
+    - Social login buttons (Google, GitHub) - placeholders
+    - Error display with icons, loading spinner
+    - Toast notifications on success/failure
+    - Redirects to / if already authenticated
+
+  REGISTER (/register):
+    - Username, email, password, confirm password fields
+    - Real-time validation with check/X icons per field
+    - Rules: username >= 3 chars, valid email, password >= 8 chars
+    - Social signup buttons (Google, GitHub) - placeholders
+    - Redirects to / if already authenticated
+
+  BLOG DETAILS (/blog/:id):
+    - Full blog view with cover image, title, author info
+    - Reading time (200 wpm) + word count
+    - Like/Unlike button, Bookmark/Save toggle
+    - Share button (Web Share API / clipboard fallback)
+    - Tags as clickable pills
+    - CommentSection with create/delete/like
+    - BlogDetailSkeleton during loading
+
+  PROFILE (/profile/:id):
+    - Gradient banner, avatar (initials or image), username, bio
+    - Stats: followers, following, stories
+    - Follow/Unfollow button (not for own profile)
+    - Tabs: "Stories" (BlogCards) / "About" (bio + stats)
+    - Joined date display
+
+  CREATE BLOG (/create):
+    - Cover image: upload (JPG/PNG/GIF/WebP, max 5MB) or AI generate
+    - Title input, Excerpt (max 160 chars)
+    - Content editor with Write/Preview tabs
+    - Tags input (comma-separated, live preview)
+    - Sidebar panels:
+      - Publishing Options (draft/published toggle)
+      - Writing tips
+      - Stats (word count, read time, character count)
+      - AI Content Review (quality, readability, grammar, SEO scores)
+      - Fact-Check (credibility score, fake news flag)
+    - Floating AI Writing Assistant (chat panel for content generation)
+    - Save Draft / Publish buttons
+
+  EDIT BLOG (/edit/:id):
+    - Loads existing blog by ID
+    - Same editor as CreateBlog (minus AI generation features)
+    - Cover image management (view, change, remove)
+    - Save Draft / Update buttons
+
+  DASHBOARD (/dashboard):
+    - Stats cards: Published, Total Views, Total Likes, Total Comments
+    - Blog DataTable with tabs: All / Published / Drafts
+    - Columns: Title (with date), Status badge, Views, Likes, Comments
+    - Row actions: Edit, Publish, Delete (with confirmation)
+    - "Write New" button
+
+  ADMIN DASHBOARD (/admin):
+    - Stats cards: Total Users, Blogs, Comments, Likes (with trends)
+    - Line chart: User Growth (monthly)
+    - Bar chart: Blog Activity (weekly - blogs + comments)
+    - Recent Users and Recent Blogs panels
+    - AdminSidebar navigation
+
+  MANAGE USERS (/admin/users):
+    - Search by username/email
+    - DataTable: Username, Email, Role, Status (Active/Banned),
+      Blogs count, Joined date
+    - Actions: Ban/Unban, Toggle Admin, Delete
+    - Pagination (10 per page)
+
+  MANAGE BLOGS (/admin/blogs):
+    - Search by title/author
+    - DataTable: Title, Author, Status (Published/Pending/Rejected),
+      Views, Created date
+    - Actions: Approve, Reject, Delete
+    - Pagination
+
+  REPORTS (/admin/reports):
+    - Pending reports count banner (yellow alert)
+    - DataTable: Content title, Type, Reason, Reported By,
+      Status (Pending/Resolved/Dismissed), Date
+    - Actions: Resolve, Dismiss
+    - Pagination
+
+  SETTINGS (/admin/settings):
+    - Tabs: General, Moderation, Maintenance
+    - General: Enable Comments toggle, Require Approval toggle,
+      Max Blog Size input
+    - Moderation: Auto Moderation toggle, Spam Detection Threshold
+    - Maintenance: Enable Maintenance Mode toggle, Maintenance
+      Message textarea, warning banner
+    - Save Settings button
+
+  NOT FOUND (/404 or *):
+    - Centered card with pulsing alert icon
+    - "404" heading, "Page Not Found" subtitle
+    - "Go Home" button
+
+3.11 UI COMPONENTS (shadcn/ui)
+------------------------------------------------------------------------------
+  51 components in client/src/components/ui/:
+    Accordion, Alert, AlertDialog, AspectRatio, Avatar, Badge,
+    Breadcrumb, Button, ButtonGroup, Calendar, Card, Carousel,
+    Chart, Checkbox, Collapsible, Command, ContextMenu, Dialog,
+    Drawer, DropdownMenu, Empty, Field, Form, HoverCard, Input,
+    InputGroup, InputOTP, Item, Kbd, Label, Menubar,
+    NavigationMenu, Pagination, Popover, Progress, RadioGroup,
+    Resizable, ScrollArea, Select, Separator, Sheet, Sidebar,
+    Skeleton, Slider, Sonner, Spinner, Switch, Table, Tabs,
+    Textarea, Toggle, ToggleGroup, Tooltip
+
+3.12 STYLING & THEMING (Tailwind CSS)
+------------------------------------------------------------------------------
+  Framework:        Tailwind CSS v4 (with @import "tailwindcss" syntax)
+  Plugins:          @tailwindcss/typography, tw-animate-css
+  Variants:         @custom-variant dark (&:is(.dark *))
+
+  Design Tokens (CSS custom properties in :root and .dark):
+
+    Light Mode:
+      --background:        #FFFFFF
+      --foreground:        #000000
+      --primary:           #000000
+      --secondary:         #404040
+      --muted:             #F5F5F5
+      --muted-foreground:  #737373
+      --accent:            #F5F5F5
+      --border:            #E5E5E5
+      --radius:            0.25rem
+
+    Dark Mode:
+      --background:        #000000
+      --foreground:        #FFFFFF
+      --primary:           #FFFFFF
+      --card:              #0A0A0A
+      --muted:             #171717
+      --border:            #262626
+      --radius:            0.25rem
+
+  Typography:
+    Headings:     Inter (font-semibold, tracking-tight)
+    Body:         Inter (font-normal, text-base)
+    Monospace:    Fira Code (code blocks)
+    Line heights: leading-tight (headings), leading-relaxed (body)
+
+  Animations:
+    fadeIn:    200ms ease-out
+    scaleIn:   300ms cubic-bezier(0.16, 1, 0.3, 1)
+    shake:     100ms ease-in-out (form errors)
+    skeleton:  animate-pulse
+
+3.13 CUSTOM HOOKS
+------------------------------------------------------------------------------
+  useAuth()         Returns AuthContext; throws if used outside provider
+  useFetch(url,     Generic fetch: returns {data, loading, error}
+    options?)       Supports skip/dependencies; auto-injects JWT
+  useMobile()       Boolean, matches <768px via window.matchMedia
+  usePersistFn(fn)  Stable function reference (like useCallback)
+  useComposition()  IME composition handlers for CJK languages,
+                    blocks Enter/Escape during composition
+
+3.14 INTERNATIONALIZATION (i18n)
+------------------------------------------------------------------------------
+  Languages:   English (en), Chinese (zh)
+  Structure:   Nested translation objects, dot-notation key lookup
+  Persistence: language preference stored in localStorage
+  Scope:       nav, home, auth, editor, common, admin sections
+
+  Example keys:
+    nav.home       = "Home" / "<U+9996><U+9875>"
+    auth.login     = "Login" / "<U+767B><U+5F55>"
+    editor.publish = "Publish" / "<U+53D1><U+5E03>"
+
+3.15 AUTHENTICATION FLOW (Client-Side)
+------------------------------------------------------------------------------
+  REGISTER:
+    1. Form validates fields (real-time)
+    2. AuthContext.register(username, email, password)
+    3. api.authAPI.register() -> POST /api/auth/register
+    4. On success: auto-login (same credentials)
+    5. Token + user stored in localStorage
+    6. isAuthenticated = true
+
+  LOGIN:
+    1. Form validates email + password
+    2. AuthContext.login(email, password)
+    3. api.authAPI.login() -> POST /api/auth/login
+    4. Backend returns { access_token, user }
+    5. Token stored in localStorage as 'token'
+    6. User stored in localStorage as 'user' (JSON)
+    7. State: user, token, isAuthenticated = true
+
+  TOKEN AUTO-RESTORE:
+    On mount, AuthProvider checks localStorage
+    If token + user found (valid JSON), restores auth state
+    No token refresh mechanism (relies on 24h JWT expiry)
+
+  LOGOUT:
+    1. AuthContext.logout()
+    2. api.authAPI.logout() -> POST /api/auth/logout (silent on error)
+    3. Clears localStorage 'token' and 'user'
+    4. State: user=null, token=null, isAuthenticated=false
+
+  ROUTE PROTECTION:
+    ProtectedRoute component:
+      isLoading=true  -> full-screen Loader
+      !authenticated  -> redirect /login
+      adminRequired & !admin -> redirect /
+      otherwise       -> render children
+
+3.16 BUILD & DEPLOYMENT
+------------------------------------------------------------------------------
+  Scripts:
+    dev:        vite --host
+    build:      vite build && esbuild server/index.ts ...
+    start:      NODE_ENV=production node dist/index.js
+    preview:    vite preview --host
+    check:      tsc --noEmit
+    format:     prettier --write .
+
+  Build output:
+    Client bundle:  dist/public/  (Vite output)
+    Server bundle:  dist/index.js (esbuild)
+
+  Production Server (server/index.ts):
+    Express serving dist/public/ static files
+    Fallback to index.html for SPA routing
+    Listens on process.env.PORT || 3000
+
+  Vite Configuration:
+    Port: 3000, host: true, strictPort: false
+    Proxy: /api -> localhost:5000, /uploads -> localhost:5000
+    Aliases: @ -> client/src/, @shared -> shared/, @assets -> attached_assets/
+    Root: client/
+
+3.17 TESTING STATUS
+------------------------------------------------------------------------------
+  Vitest ^2.1.4 is listed in devDependencies.
+  NO test files or test configuration exist anywhere in the project.
+  Testing is NOT implemented.
+
+
+================================================================================
+4. BACKEND (backend/)
+================================================================================
+
+4.1 TECHNOLOGY STACK
+------------------------------------------------------------------------------
+  Language:        Python 3.8+ (3.13 detected)
+  Framework:       Flask 2.3.0
+  ORM:             Flask-SQLAlchemy 3.0.5
+  Database:        MySQL 5.7+ (PyMySQL 1.1.0 driver)
+  Auth:            Flask-JWT-Extended 4.5.2 (JWT) + Flask-Bcrypt 1.0.1
+  CORS:            Flask-CORS 4.0.0
+  AI:              OpenAI Python 0.27.8 (GPT-3.5-turbo + DALL-E 3)
+  Config:          python-dotenv 1.0.0
+
+4.2 DIRECTORY STRUCTURE
+------------------------------------------------------------------------------
+backend/
+  .env                          # Environment variables (active)
+  .env.example                  # Environment variables template
+  config.py                     # Flask app configuration
+  requirements.txt              # Python dependencies
+  run.py                        # Application entry point
+  run_migration.py              # Database migration script (fact-check)
+  test_env.py                   # Environment variable test
+  test_ai_connection.py         # OpenAI connection test
+  test_trending.py              # Trending endpoints test
+  vosk-model-tmp.zip            # Vosk speech model (remnant)
+  uploads/
+    audio/                      # Audio uploads (empty; feature removed)
+    avatars/                    # Avatar images (empty)
+    blogs/                      # Blog cover images (11 JPGs)
+  app/
+    __init__.py                 # Flask app factory
+    ai/
+      analyzer.py               # AI service (OpenAI + mock fallback)
+    models/
+      __init__.py               # Model imports
+      user.py                   # User + Profile models
+      blog.py                   # Blog + AIAnalysis models
+      interaction.py            # Comment, Like, Bookmark, CommentLike,
+                                # Follow, Report, PlatformSetting,
+                                # TokenBlacklist
+    routes/
+      admin.py                  # Admin CRUD + moderation
+      ai.py                     # AI analysis/fact-check/generation
+      analytics.py              # User + admin analytics
+      auth.py                   # Register, login, logout, profile
+      blogs.py                  # Blog CRUD + like/bookmark
+      comments.py               # Comment CRUD + like
+      search.py                 # Search blogs + users
+      test.py                   # Health check + AI test endpoints
+      trending.py               # Trending topics, authors, blogs
+      upload.py                 # File upload endpoint
+      users.py                  # User profiles, follow, blogs
+    utils/
+      __init__.py               # Empty package init
+      file_upload.py            # File upload helpers
+
+4.3 DEPENDENCIES
+------------------------------------------------------------------------------
+  Flask                 2.3.0      Web framework
+  Flask-SQLAlchemy      3.0.5      ORM
+  Flask-JWT-Extended    4.5.2      JWT authentication
+  Flask-CORS            4.0.0      Cross-Origin Resource Sharing
+  Flask-Bcrypt          1.0.1      Password hashing (bcrypt)
+  PyMySQL               1.1.0      MySQL driver
+  python-dotenv         1.0.0      Environment variable loader
+  openai                0.27.8     OpenAI API client
+  cryptography          41.0.3     Cryptographic utilities
+
+4.4 APPLICATION CONFIGURATION
+------------------------------------------------------------------------------
+  Config class (config.py):
+    SQLALCHEMY_DATABASE_URI:
+      Reads BLOG_DATABASE_URL, falls back to DATABASE_URL
+      Default: mysql+pymysql://root:@localhost/blog_platform
+      Safeguard: rejects postgresql:// URLs, falls to MySQL default
+    SQLALCHEMY_TRACK_MODIFICATIONS: False
+    SQLALCHEMY_ENGINE_OPTIONS:
+      pool_pre_ping: True, pool_recycle: 300
+    JWT_SECRET_KEY:              from env or 'dev-secret-key-12345'
+    JWT_ACCESS_TOKEN_EXPIRES:    24 hours (timedelta)
+    JWT_TOKEN_LOCATION:          ['headers']
+    JWT_HEADER_NAME:             'Authorization'
+    JWT_HEADER_TYPE:             'Bearer'
+    JWT_BLACKLIST_ENABLED:       True
+    JWT_BLACKLIST_TOKEN_CHECKS:  ['access']
+    OPENAI_API_KEY:              from env
+    IMAGE_API_KEY:               from env
+    SECRET_KEY:                  same as JWT_SECRET_KEY
+    UPLOAD_FOLDER:               backend/uploads/
+    MAX_CONTENT_LENGTH:          16MB (16 * 1024 * 1024)
+    ALLOWED_EXTENSIONS:          {png, jpg, jpeg, gif, webp}
+
+  .env file contents:
+    BLOG_DATABASE_URL=mysql+pymysql://root:@localhost/blog_platform
+    JWT_SECRET_KEY=dev-secret-key-12345
+    OPENAI_API_KEY=sk-...
+    IMAGE_API_KEY=sk-...
+    FLASK_ENV=development
+
+4.5 ENTRY POINT
+------------------------------------------------------------------------------
+  run.py:
+    app = create_app()
+    @app.shell_context_processor  (exports all models for Flask shell)
+    db.create_all()               (auto-creates tables on startup)
+    app.run(debug=True, host='0.0.0.0', port=5000)
+
+  app/__init__.py (Flask app factory):
+    db = SQLAlchemy()
+    jwt = JWTManager()
+    bcrypt = Bcrypt()
+    CORS(app)
+
+    Registers blueprints:
+      auth_bp, blogs_bp, comments_bp, admin_bp, ai_bp,
+      upload_bp, analytics_bp, trending_bp, users_bp,
+      search_bp, test_bp
+
+    Configures JWT error handlers:
+      @jwt.invalid_token_loader       -> 422
+      @jwt.unauthorized_loader        -> 401
+      @jwt.expired_token_loader       -> 401
+      @jwt.token_in_blocklist_loader  -> checks TokenBlacklist
+
+    Static file serving:
+      /uploads/<path:filename> -> uploads/ directory
+
+4.6 COMPLETE API ENDPOINTS REFERENCE
+------------------------------------------------------------------------------
+  AUTH (prefix: /api/auth)
+  -------------------------------
+  POST   /api/auth/register         Register new user
+                                     Body: {username, email, password}
+                                     Returns: {message, user}
+
+  POST   /api/auth/login            Login
+                                     Body: {email, password}
+                                     Returns: {access_token, user}
+
+  POST   /api/auth/logout           Logout (blacklist JWT)
+                                     Headers: Authorization: Bearer <token>
+
+  GET    /api/auth/profile          Get own profile
+                                     Returns: {user: {id, username, email,
+                                              role, is_active, created_at,
+                                              profile: {bio, avatar_url}}}
+
+  PUT    /api/auth/profile          Update profile
+                                     Body (JSON): {bio}
+                                     Body (multipart): avatar file
+                                     Returns: {message, user}
+
+  BLOGS (prefix: /api/blogs)
+  -------------------------------
+  GET    /api/blogs                 List blogs (public, paginated)
+                                     Query: search, tags, status, sort_by
+                                            (views/likes/date),
+                                            page, per_page
+                                     Returns: {blogs[], total, page,
+                                              per_page, pages}
+
+  GET    /api/blogs/<id>            Get single blog (increments views)
+                                     Returns: {blog}
+
+  POST   /api/blogs                 Create blog
+                                     Body: {title, content, tags?, status?,
+                                            image_url?} or multipart
+                                     Returns: {message, blog}
+
+  PUT    /api/blogs/<id>            Update blog (owner only)
+                                     Body: same as create
+                                     Returns: {message, blog}
+
+  DELETE /api/blogs/<id>            Delete blog (owner only)
+                                     Returns: {message}
+
+  POST   /api/blogs/<id>/like       Toggle like (add/remove)
+                                     Returns: {message, is_liked, like_count}
+
+  POST   /api/blogs/<id>/bookmark   Toggle bookmark (add/remove)
+                                     Returns: {message, is_bookmarked}
+
+  GET    /api/blogs/my-blogs        Get current user's blogs
+                                     Returns: {blogs[]}
+
+  GET    /api/blogs/bookmarks       Get bookmarked blogs
+                                     Returns: {blogs[]}
+
+  COMMENTS (prefix: /api/comments)
+  -------------------------------
+  POST   /api/comments              Create comment
+                                     Body: {blog_id, content}
+                                     Returns: {message, comment}
+
+  GET    /api/comments/blog/<id>    Get comments for blog
+                                     Returns: {comments[]}
+
+  DELETE /api/comments/<id>         Delete comment (owner only)
+                                     Returns: {message}
+
+  POST   /api/comments/<id>/like    Toggle like on comment
+                                     Returns: {message, is_liked}
+
+  ADMIN (prefix: /api/admin)
+  -------------------------------
+  GET    /api/admin/stats           Platform stats
+                                     Returns: {total_users, total_blogs,
+                                              total_comments, total_likes,
+                                              top_users[], top_blogs[]}
+
+  GET    /api/admin/users           List users (admin)
+                                     Query: search
+                                     Returns: {users[]}
+
+  PUT    /api/admin/users/<id>/     Toggle user active/ban
+         toggle-active              Returns: {message, is_active}
+
+  PUT    /api/admin/users/<id>/role Update user role
+                                     Body: {role: 'user'|'admin'}
+                                     Returns: {message, role}
+
+  DELETE /api/admin/users/<id>      Delete user (cannot delete self)
+                                     Returns: {message}
+
+  GET    /api/admin/blogs           List all blogs (admin)
+                                     Query: status (published/draft/rejected)
+                                     Returns: {blogs[]}
+
+  DELETE /api/admin/blogs/<id>      Delete any blog (admin)
+                                     Returns: {message}
+
+  POST   /api/admin/blogs/<id>/     Approve blog (-> published)
+         approve                    Returns: {message, status}
+
+  POST   /api/admin/blogs/<id>/     Reject blog (-> rejected)
+         reject                     Returns: {message, status}
+
+  GET    /api/admin/reports         List all reports
+                                     Returns: {reports[]}
+
+  POST   /api/admin/reports/<id>/   Resolve/dismiss report
+         resolve                    Body: {status: 'resolved'|'dismissed'}
+                                     Returns: {message, status}
+
+  GET    /api/admin/settings        Get all platform settings
+                                     Returns: {settings: {key: value, ...}}
+
+  PUT    /api/admin/settings        Update platform settings
+                                     Body: {key: value, ...}
+                                     Returns: {message, settings}
+
+  AI (prefix: /api/ai)
+  -------------------------------
+  POST   /api/ai/analyze            Analyze content
+                                     Body: {title, content, blog_id?}
+                                     Returns: {analysis: {quality_score,
+                                              readability_score,
+                                              grammar_feedback,
+                                              seo_feedback}}
+
+  GET    /api/ai/blog/<id>/         Get stored AI analysis
+         analysis                   Returns: {analysis}
+
+  POST   /api/ai/fact-check         Fact-check content
+                                     Body: {title, content}
+                                     Returns: {credibility_score,
+                                              is_fake_news,
+                                              red_flags[],
+                                              warnings_count,
+                                              feedback}
+
+  POST   /api/ai/generate           Generate blog content
+                                     Body: {prompt}
+                                     Returns: {title, excerpt, content}
+
+  POST   /api/ai/generate-image     Generate image from prompt
+                                     Body: {prompt}
+                                     Returns: {image_url}
+
+  UPLOAD (prefix: /api/upload)
+  -------------------------------
+  POST   /api/upload/image          Upload image file
+                                     Body: multipart/form-data {image, type}
+                                     type: 'blogs' or 'avatars'
+                                     Returns: {url, filename}
+
+  ANALYTICS (prefix: /api/analytics)
+  -------------------------------
+  GET    /api/analytics/user        Current user's analytics
+                                     Returns: {total_views, total_likes,
+                                              total_comments, total_followers,
+                                              top_blogs[]}
+
+  GET    /api/analytics/blogs/<id>  Single blog analytics (owner/admin)
+                                     Returns: {blog_id, title, views, likes,
+                                              comments_count,
+                                              daily_views[]}
+
+  GET    /api/analytics/admin       Admin analytics
+                                     Query: period (default '30d')
+                                     Returns: {new_users[], new_blogs[],
+                                              new_comments[], totals}
+
+  TRENDING (prefix: /api/trending)
+  -------------------------------
+  GET    /api/trending/topics       Top 10 trending topics (tags)
+                                     Scoring: count*10 + views*2 +
+                                              likes*5 + comments*3
+                                     Returns: {topics[{tag, score}]}
+
+  GET    /api/trending/authors      Top 10 recommended authors
+                                     Scoring: blogs*15 + views*1 +
+                                              likes*8 + comments*5 +
+                                              followers*20
+                                     Returns: {authors[{user, score}]}
+
+  GET    /api/trending/blogs        Top trending blogs (paginated)
+                                     Scoring: views*2 + likes*10 +
+                                              comments*3
+                                     Returns: {blogs[], page, per_page}
+
+  GET    /api/trending/all          All trending combined
+                                     Returns: {topics[], authors[], blogs[]}
+
+  USERS (prefix: /api/users)
+  -------------------------------
+  GET    /api/users/<id>            Get user profile
+                                     (optional JWT for is_following)
+                                     Returns: {user: {..., profile,
+                                              blog_count, followers_count,
+                                              following_count}}
+
+  GET    /api/users/<id>/blogs      Get user's published blogs
+                                     Returns: {blogs[]}
+
+  POST   /api/users/<id>/follow     Follow user
+                                     Returns: {message, is_following}
+
+  DELETE /api/users/<id>/follow     Unfollow user
+                                     Returns: {message, is_following}
+
+  GET    /api/users/following/      Get blogs from followed users
+         blogs                      Query: page, per_page
+                                     Returns: {blogs[], page, per_page}
+
+  GET    /api/users/trending        Top 10 authors by total likes
+                                     Returns: {authors[]}
+
+  SEARCH (prefix: /api/search)
+  -------------------------------
+  GET    /api/search?q=<query>      Search blogs and users
+                                     Returns: {blogs[], users[]}
+
+  TEST (prefix: /api/test)
+  -------------------------------
+  GET    /api/test/ping             Health check
+                                     Returns: {message: 'pong', status: 'ok'}
+
+  GET    /api/test/auth-test        Test JWT auth
+                                     Returns: {message, user_id}
+
+  GET    /api/test/ai-connection    Test OpenAI connection
+                                     Returns: connection status
+
+  GET    /api/test/ai-analyze-test  Test AI analysis with sample data
+
+  GET    /api/test/ai-factcheck-    Test AI fact-check with sample data
+         test
+
+  STATIC FILES
+  -------------------------------
+  GET    /uploads/<folder>/<file>   Serve uploaded images
+
+4.7 AUTHENTICATION & AUTHORIZATION
+------------------------------------------------------------------------------
+  REGISTRATION:
+    - Email validation (regex)
+    - Password minimum length: 6 characters
+    - Username/email uniqueness check
+    - Creates User + Profile records
+    - Supports admin user creation (is_admin flag in body)
+
+  LOGIN:
+    - Email + password verification
+    - Checks is_active flag (banned users cannot login)
+    - Returns JWT access token + user data
+
+  JWT CONFIGURATION:
+    - Token in Authorization: Bearer header
+    - 24-hour expiry
+    - Identity: user ID (converted to string)
+
+  LOGOUT:
+    - Token blacklisting via TokenBlacklist table
+    - JTI (JWT ID) extracted and stored
+    - Blocked on every request via token_in_blocklist_loader
+
+  AUTHORIZATION:
+    - @jwt_required() decorator for protected endpoints
+    - admin_only: checks user.role == 'admin'
+    - Owner checks: blog.user_id == current_user_id
+    - Optional JWT: verify_jwt_in_request(optional=True) for mixed endpoints
+
+4.8 MIDDLEWARE
+------------------------------------------------------------------------------
+  Flask Extensions (initialized in app/__init__.py):
+    Flask-SQLAlchemy (db)      - ORM
+    Flask-JWT-Extended (jwt)   - JWT auth with error handlers
+    Flask-Bcrypt (bcrypt)      - Password hashing
+    Flask-CORS                 - CORS enabled globally
+
+  JWT Error Handlers:
+    invalid_token_loader   -> 422 {msg: "Invalid token"}
+    unauthorized_loader    -> 401 {msg: "Missing authorization header"}
+    expired_token_loader   -> 401 {msg: "Token has expired"}
+    token_in_blocklist     -> 401 {msg: "Token has been revoked"}
+
+  Admin Authorization Helpers (inline in route files):
+    is_admin(user_id)      - Queries user.role == 'admin'
+    require_admin()        - Returns 403 if not admin
+
+  Optional JWT Helper:
+    _get_optional_user_id()- Uses verify_jwt_in_request(optional=True)
+
+4.9 DATABASE MODELS (SQLAlchemy)
+------------------------------------------------------------------------------
+  USER (users):
+    id              Integer      PK, auto-increment
+    username        String(80)   UNIQUE, NOT NULL, indexed
+    email           String(120)  UNIQUE, NOT NULL, indexed
+    password_hash   String(255)  NOT NULL
+    role            String(20)   Default 'user'
+    is_active       Boolean      Default True
+    created_at      DateTime     Default utcnow
+    Relationships:
+      profile    -> Profile    (1:1, cascade delete)
+      blogs      -> Blog       (1:N, cascade delete)
+      comments   -> Comment    (1:N, cascade delete)
+      likes      -> Like       (1:N, cascade delete)
+      bookmarks  -> Bookmark   (1:N, cascade delete)
+      following  -> Follow     (1:N via follower_id)
+      followers  -> Follow     (1:N via following_id)
+
+  PROFILE (profiles):
+    id              Integer      PK, auto-increment
+    user_id         Integer      FK -> users.id, NOT NULL, indexed
+    bio             Text         nullable
+    avatar_url      String(255)  nullable
+
+  BLOG (blogs):
+    id              Integer      PK, auto-increment
+    user_id         Integer      FK -> users.id, NOT NULL, indexed
+    title           String(255)  NOT NULL
+    content         Text         NOT NULL
+    image_url       String(255)  nullable
+    tags            String(255)  nullable (comma-separated)
+    status          String(20)   Default 'draft'
+    is_fake_news    Boolean      Default False
+    views           Integer      Default 0
+    created_at      DateTime     Default utcnow
+    updated_at      DateTime     Default utcnow, onupdate utcnow
+    Relationships:
+      author     -> User       (N:1)
+      ai_analysis-> AIAnalysis (1:1, cascade delete)
+      comments   -> Comment    (1:N, cascade delete)
+      likes      -> Like       (1:N, cascade delete)
+      bookmarks  -> Bookmark   (1:N, cascade delete)
+
+  AIANALYSIS (ai_analysis):
+    id                  Integer      PK, auto-increment
+    blog_id             Integer      FK -> blogs.id, NOT NULL, indexed
+    quality_score       Integer      nullable (0-100)
+    grammar_feedback    Text         nullable
+    seo_feedback        Text         nullable
+    readability_score   Integer      nullable (0-100)
+    credibility_score   Integer      nullable (0-100)
+    is_fake_news        Boolean      Default False
+    fact_check_feedback Text         nullable
+    created_at          DateTime     Default utcnow
+
+  COMMENT (comments):
+    id              Integer      PK, auto-increment
+    user_id         Integer      FK -> users.id, NOT NULL, indexed
+    blog_id         Integer      FK -> blogs.id, NOT NULL, indexed
+    content         Text         NOT NULL
+    created_at      DateTime     Default utcnow
+    Relationships:
+      user  -> User      (N:1)
+      blog  -> Blog      (N:1)
+      likes -> CommentLike (1:N, cascade delete)
+
+  LIKE (likes) -- blog-level likes:
+    id              Integer      PK, auto-increment
+    user_id         Integer      FK -> users.id, NOT NULL
+    blog_id         Integer      FK -> blogs.id, NOT NULL
+    created_at      DateTime     Default utcnow
+    UniqueConstraint: (user_id, blog_id)
+
+  BOOKMARK (bookmarks):
+    id              Integer      PK, auto-increment
+    user_id         Integer      FK -> users.id, NOT NULL
+    blog_id         Integer      FK -> blogs.id, NOT NULL
+    created_at      DateTime     Default utcnow
+    UniqueConstraint: (user_id, blog_id)
+
+  COMMENTLIKE (comment_likes):
+    id              Integer      PK, auto-increment
+    user_id         Integer      FK -> users.id, NOT NULL
+    comment_id      Integer      FK -> comments.id, NOT NULL
+    created_at      DateTime     Default utcnow
+    UniqueConstraint: (user_id, comment_id)
+
+  FOLLOW (follows):
+    id              Integer      PK, auto-increment
+    follower_id     Integer      FK -> users.id, NOT NULL
+    following_id    Integer      FK -> users.id, NOT NULL
+    created_at      DateTime     Default utcnow
+    UniqueConstraint: (follower_id, following_id)
+
+  REPORT (reports):
+    id              Integer      PK, auto-increment
+    reporter_id     Integer      FK -> users.id, NOT NULL
+    content_type    String(20)   NOT NULL ('blog' | 'comment')
+    content_id      Integer      NOT NULL (polymorphic)
+    reason          String(255)  NOT NULL
+    status          String(20)   Default 'pending'
+    resolved_by     Integer      FK -> users.id, nullable
+    resolved_at     DateTime     nullable
+    created_at      DateTime     Default utcnow
+
+  PLATFORMSETTING (platform_settings):
+    id              Integer      PK, auto-increment
+    setting_key     String(100)  UNIQUE, NOT NULL
+    setting_value   Text         nullable
+    updated_at      DateTime     Default utcnow, onupdate utcnow
+
+  TOKENBLACKLIST (token_blacklist):
+    id              Integer      PK, auto-increment
+    jti             String(255)  UNIQUE, NOT NULL, indexed
+    created_at      DateTime     Default utcnow
+
+4.10 AI INTEGRATION
+------------------------------------------------------------------------------
+  AI Service: app/ai/analyzer.py (AIService class)
+
+  Configuration:
+    OPENAI_API_KEY  -> OpenAI client (gpt-3.5-turbo)
+    IMAGE_API_KEY   -> Image generation (DALL-E 3)
+    Auto-detects: use_mock=True if key is empty/missing
+
+  FEATURES:
+
+  1) analyze_content(title, content):
+     Mock mode:
+       - Quality: word count based (0-100)
+       - Readability: avg sentence length based (0-100)
+       - Grammar: rule-based feedback
+       - SEO: keyword/tip-based feedback
+     OpenAI mode:
+       - Uses gpt-3.5-turbo with structured JSON prompt
+       - Returns quality_score, readability_score, grammar_feedback,
+         seo_feedback
+
+  2) fact_check_content(title, content):
+     Mock mode:
+       - Checks against 19 fake-news keywords
+       - 3 sensational patterns (regex: ALL CAPS, !!!, ???)
+       - Capitalization/exclamation ratios
+       - Source citations check
+       - Absolute claims detection (e.g., "100%", "never", "always")
+       - Score: 0-100, threshold < 40 = fake news flag
+       - Returns: credibility_score, is_fake_news, red_flags[],
+         warnings_count, feedback
+     OpenAI mode:
+       - Uses gpt-3.5-turbo with detailed fact-checking prompt
+       - Checks: unverified claims, clickbait, conspiracy theories,
+         medical misinformation, etc.
+
+  3) generate_content(prompt):
+     Mock mode:
+       - 7-paragraph structured essay with title, excerpt, full content
+     OpenAI mode:
+       - Uses gpt-3.5-turbo with strict JSON output
+       - Returns {title, excerpt, content}
+
+  4) generate_image(prompt):
+     Mock mode:
+       - Returns placeholder from via.placeholder.com
+     OpenAI mode:
+       - Uses dall-e-3 via openai.Image.create()
+       - Returns image URL
+
+  Persistent AI Data:
+    Analysis results can be saved to AIAnalysis model (linked to blog)
+    Fact-check results stored in AIAnalysis: credibility_score,
+      is_fake_news, fact_check_feedback
+
+4.11 FILE UPLOAD SYSTEM
+------------------------------------------------------------------------------
+  Helper: app/utils/file_upload.py
+    allowed_file(filename)    - Checks extension whitelist
+    save_upload_file(file,    - Generates UUID filename
+                     folder)    Saves to uploads/<folder>/<uuid>.<ext>
+                                Returns relative path
+    delete_upload_file(path)  - Deletes file from disk
+
+  Upload endpoint:
+    POST /api/upload/image
+    Multipart: {image: File, type: 'blogs'|'avatars'}
+    Returns: {url: /uploads/<folder>/<filename>, filename}
+
+  Integration with blog creation:
+    POST/PUT /api/blogs accepts multipart with image field
+    PUT /api/auth/profile accepts avatar upload
+
+  Storage:
+    Base: backend/uploads/
+    Subfolders: blogs/, avatars/, audio/ (remnant)
+    Max file size: 16MB
+    Allowed types: png, jpg, jpeg, gif, webp
+    Static serving: GET /uploads/<folder>/<filename>
+
+4.12 TRENDING SYSTEM
+------------------------------------------------------------------------------
+  All trending is computed in real-time from database (no caching).
+
+  Trending Topics (tags):
+    Score = count * 10 + views * 2 + likes * 5 + comments * 3
+    Top 10 tags by aggregate score
+
+  Trending Authors:
+    Score = blogs * 15 + views * 1 + likes * 8 + comments * 5
+            + followers * 20
+    Top 10 users
+
+  Trending Blogs:
+    Score = views * 2 + likes * 10 + comments * 3
+    Paginated results
+
+4.13 ANALYTICS SYSTEM
+------------------------------------------------------------------------------
+  User Analytics:
+    Aggregated: total_views, total_likes, total_comments,
+                total_followers
+    Top blogs: user's blogs sorted by views
+
+  Blog Analytics:
+    Single blog: views, likes, comments_count
+    Daily views time series
+
+  Admin Analytics:
+    Time series: new_users, new_blogs, new_comments per day
+    Configurable period (default 30 days)
+    Totals across all time
+
+4.14 ERROR HANDLING
+------------------------------------------------------------------------------
+  Pattern: Try/except around DB operations with rollback on failure
+  Server-side: print() to console for debugging
+
+  HTTP Status Codes:
+    200  Success (GET, PUT, DELETE)
+    201  Created (POST new resource)
+    400  Bad request (missing fields, validation, duplicates)
+    401  Unauthorized (invalid credentials, missing/expired JWT)
+    403  Forbidden (not admin, not owner, deactivated account)
+    404  Not found
+    422  Invalid JWT token
+    429  OpenAI rate limit exceeded
+    500  Server error
+
+  AI Service Fallback:
+    All OpenAI methods have try/except -> mock fallback
+
+4.15 SECURITY MEASURES
+------------------------------------------------------------------------------
+  1. Password hashing: bcrypt (Flask-Bcrypt) with salts
+  2. JWT authentication: 24h expiry, token blacklisting on logout
+  3. SQL injection prevention: SQLAlchemy ORM parameterized queries
+  4. Input validation:
+     - Email regex validation
+     - Password minimum length (6 chars)
+     - Required field checks
+     - File extension whitelist
+  5. File upload security:
+     - Extension whitelist (png, jpg, jpeg, gif, webp)
+     - UUID-based filenames (no user-controlled names)
+     - Max file size: 16MB
+     - secure_filename() from werkzeug
+  6. Authorization checks:
+     - Owner-only resource modification
+     - Admin-only sensitive operations
+     - Role-based access control
+     - Cannot follow self
+     - Cannot delete own admin account
+  7. Account management: Deactivation toggle
+  8. CORS: enabled via Flask-CORS
+  9. JWT blacklisting for logout
+  10. Environment isolation (.env in .gitignore)
+
+4.16 TESTING
+------------------------------------------------------------------------------
+  No formal test framework (no pytest, unittest).
+  Testing is ad-hoc via:
+    - Standalone scripts: test_env.py, test_ai_connection.py,
+      test_trending.py
+    - In-app test endpoints: /api/test/ping, /api/test/auth-test,
+      /api/test/ai-connection, /api/test/ai-analyze-test,
+      /api/test/ai-factcheck-test
+
+
+================================================================================
+5. DATABASE (database/)
+================================================================================
+
+5.1 DIRECTORY STRUCTURE
+------------------------------------------------------------------------------
+database/
+  schema.sql                    # Initial schema + seed data (131 lines)
+  migration_v2.sql              # v2 features: follows, reports,
+                                #   settings, token_blacklist (70 lines)
+  migration_image_storage.sql   # Widen image_url/avatar_url (14 lines)
+  migration_fact_check.sql      # Direct ALTER fact-check columns (25 lines)
+  quick_fix_migration.sql       # Idempotent fact-check migration (89 lines)
+
+  + backend/run_migration.py    # Python idempotent fact-check migration
+
+5.2 COMPLETE SCHEMA (All 12 Tables)
+------------------------------------------------------------------------------
+  TABLE: users
+    id              INT             PK AUTO_INCREMENT
+    username        VARCHAR(80)     UNIQUE NOT NULL
+    email           VARCHAR(120)    UNIQUE NOT NULL
+    password_hash   VARCHAR(255)    NOT NULL
+    role            VARCHAR(20)     DEFAULT 'user'
+    is_active       BOOLEAN         DEFAULT TRUE
+    created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP
+    INDEX:          idx_email (email)
+    INDEX:          idx_username (username)
+
+  TABLE: profiles
+    id              INT             PK AUTO_INCREMENT
+    user_id         INT             NOT NULL FK -> users(id) ON DELETE CASCADE
+    bio             TEXT            NULL
+    avatar_url      VARCHAR(500)    NULL
+    INDEX:          idx_user_id (user_id)
+
+  TABLE: blogs
+    id              INT             PK AUTO_INCREMENT
+    user_id         INT             NOT NULL FK -> users(id) ON DELETE CASCADE
+    title           VARCHAR(255)    NOT NULL
+    content         TEXT            NOT NULL
+    image_url       VARCHAR(500)    NULL
+    tags            VARCHAR(255)    NULL
+    status          VARCHAR(20)     DEFAULT 'draft'
+    is_fake_news    BOOLEAN         DEFAULT FALSE
+    views           INT             DEFAULT 0
+    created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP
+    updated_at      DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE...
+    INDEX:          idx_user_id (user_id)
+    INDEX:          idx_status (status)
+    INDEX:          idx_created_at (created_at)
+    INDEX:          idx_is_fake_news (is_fake_news)
+    FULLTEXT:       idx_search (title, content)
+
+  TABLE: ai_analysis
+    id                  INT         PK AUTO_INCREMENT
+    blog_id             INT         NOT NULL FK -> blogs(id) ON DELETE CASCADE
+    quality_score       INT         NULL
+    grammar_feedback    TEXT        NULL
+    seo_feedback        TEXT        NULL
+    readability_score   INT         NULL
+    credibility_score   INT         NULL
+    is_fake_news        BOOLEAN     DEFAULT FALSE
+    fact_check_feedback TEXT        NULL
+    created_at          DATETIME    DEFAULT CURRENT_TIMESTAMP
+    INDEX:              idx_blog_id (blog_id)
+
+  TABLE: comments
+    id              INT             PK AUTO_INCREMENT
+    user_id         INT             NOT NULL FK -> users(id) ON DELETE CASCADE
+    blog_id         INT             NOT NULL FK -> blogs(id) ON DELETE CASCADE
+    content         TEXT            NOT NULL
+    created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP
+    INDEX:          idx_user_id (user_id)
+    INDEX:          idx_blog_id (blog_id)
+
+  TABLE: likes
+    id              INT             PK AUTO_INCREMENT
+    user_id         INT             NOT NULL FK -> users(id) ON DELETE CASCADE
+    blog_id         INT             NOT NULL FK -> blogs(id) ON DELETE CASCADE
+    created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP
+    UNIQUE:         unique_user_blog_like (user_id, blog_id)
+    INDEX:          idx_user_id (user_id)
+    INDEX:          idx_blog_id (blog_id)
+
+  TABLE: bookmarks
+    id              INT             PK AUTO_INCREMENT
+    user_id         INT             NOT NULL FK -> users(id) ON DELETE CASCADE
+    blog_id         INT             NOT NULL FK -> blogs(id) ON DELETE CASCADE
+    created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP
+    UNIQUE:         unique_user_blog_bookmark (user_id, blog_id)
+    INDEX:          idx_user_id (user_id)
+    INDEX:          idx_blog_id (blog_id)
+
+  TABLE: follows
+    id              INT             PK AUTO_INCREMENT
+    follower_id     INT             NOT NULL FK -> users(id) ON DELETE CASCADE
+    following_id    INT             NOT NULL FK -> users(id) ON DELETE CASCADE
+    created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP
+    UNIQUE:         unique_follow (follower_id, following_id)
+    INDEX:          idx_follower (follower_id)
+    INDEX:          idx_following (following_id)
+
+  TABLE: comment_likes
+    id              INT             PK AUTO_INCREMENT
+    user_id         INT             NOT NULL FK -> users(id) ON DELETE CASCADE
+    comment_id      INT             NOT NULL FK -> comments(id) ON DELETE CASCADE
+    created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP
+    UNIQUE:         unique_comment_like (user_id, comment_id)
+    INDEX:          idx_comment_id (comment_id)
+
+  TABLE: reports
+    id              INT             PK AUTO_INCREMENT
+    reporter_id     INT             NOT NULL FK -> users(id) ON DELETE CASCADE
+    content_type    VARCHAR(20)     NOT NULL ('blog' | 'comment')
+    content_id      INT             NOT NULL (polymorphic, no FK)
+    reason          VARCHAR(255)    NOT NULL
+    status          VARCHAR(20)     DEFAULT 'pending'
+    resolved_by     INT             NULL FK -> users(id) ON DELETE SET NULL
+    resolved_at     DATETIME        NULL
+    created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP
+    INDEX:          idx_status (status)
+    INDEX:          idx_content (content_type, content_id)
+
+  TABLE: platform_settings
+    id              INT             PK AUTO_INCREMENT
+    setting_key     VARCHAR(100)    UNIQUE NOT NULL
+    setting_value   TEXT            NULL
+    updated_at      DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE...
+
+  TABLE: token_blacklist
+    id              INT             PK AUTO_INCREMENT
+    jti             VARCHAR(255)    UNIQUE NOT NULL
+    created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP
+    INDEX:          idx_jti (jti)
+
+5.3 MIGRATION SCRIPTS
+------------------------------------------------------------------------------
+  ORDER: schema.sql -> migration_v2.sql -> migration_image_storage.sql
+         -> migration_fact_check.sql (or quick_fix_migration.sql)
+
+  1. schema.sql
+     - Creates database 'blog_platform' (USE blog_platform)
+     - Creates 7 tables: users, profiles, blogs, ai_analysis, comments,
+       likes, bookmarks
+     - Inserts seed data (2 users, 2 profiles, 2 blogs, 2 ai_analysis,
+       2 comments, 2 likes)
+     - NOT idempotent (no IF NOT EXISTS)
+
+  2. migration_v2.sql
+     - Adds 5 tables: follows, comment_likes, reports, platform_settings,
+       token_blacklist
+     - Inserts 6 default platform settings
+     - IS idempotent (CREATE TABLE IF NOT EXISTS + INSERT IGNORE)
+
+  3. migration_image_storage.sql
+     - ALTER blogs.image_url -> VARCHAR(500)
+     - ALTER profiles.avatar_url -> VARCHAR(500)
+     - NOT idempotent
+
+  4. migration_fact_check.sql
+     - ALTER blogs ADD is_fake_news BOOLEAN
+     - ALTER ai_analysis ADD credibility_score, is_fake_news,
+       fact_check_feedback
+     - CREATE INDEX idx_is_fake_news
+     - NOT idempotent (will error if columns exist)
+
+  5. quick_fix_migration.sql (alternative to migration_fact_check.sql)
+     - Same changes but uses INFORMATION_SCHEMA.COLUMNS checks
+     - Dynamic SQL with @sql
+     - IS idempotent (safe to run multiple times)
+
+  6. backend/run_migration.py (alternative to both fact-check SQLs)
+     - Python script using pymysql
+     - Reads database URL from .env
+     - Idempotent (INFORMATION_SCHEMA checks)
+     - Updates NULL -> FALSE for is_fake_news columns
+     - Outputs DESCRIBE results
+
+5.4 SEED DATA
+------------------------------------------------------------------------------
+  Users:
+    1. admin / admin@blog.com / (admin123) / role='admin'
+    2. john_doe / john@example.com / (user123) / role='user'
+    Note: Both use same bcrypt hash (dev/test only)
+
+  Profiles:
+    1. user_id=1 / "Platform Administrator" / pravatar.cc avatar
+    2. user_id=2 / "Tech enthusiast and blogger" / pravatar.cc avatar
+
+  Blogs:
+    1. "Getting Started with Python" / tags: python,programming,tutorial
+       / views: 150 / published
+    2. "Web Development Best Practices" / tags: web,development,
+       best-practices / views: 89 / published
+
+  AI Analysis:
+    1. blog_id=1 / quality=85 / readability=78 / grammar+SEO feedback
+    2. blog_id=2 / quality=82 / readability=75 / grammar+SEO feedback
+
+  Comments:
+    1. admin on blog 1: "Great tutorial! Very helpful for beginners."
+    2. admin on blog 2: "Excellent tips on web development."
+
+  Likes:
+    1. admin likes blog 1
+    2. admin likes blog 2
+
+  Platform Settings (default):
+    comments_enabled    = "true"
+    require_approval    = "false"
+    max_blog_size       = "50000"
+    auto_moderation     = "true"
+    spam_threshold      = "0.8"
+    maintenance_mode    = "false"
+    maintenance_message = ""
+
+5.5 CONFIGURATION
+------------------------------------------------------------------------------
+  Database:   blog_platform
+  Host:       localhost
+  Port:       3306 (default)
+  User:       root
+  Password:   (empty)
+  Charset:    utf8mb4 (set in run_migration.py)
+  Connection: mysql+pymysql://root:@localhost/blog_platform
+
+5.6 RELATIONSHIP TO BACKEND MODELS
+------------------------------------------------------------------------------
+  All 12 SQL tables match 1:1 with backend SQLAlchemy models:
+    User        <-> users
+    Profile     <-> profiles
+    Blog        <-> blogs
+    AIAnalysis  <-> ai_analysis
+    Comment     <-> comments
+    Like        <-> likes
+    Bookmark    <-> bookmarks
+    CommentLike <-> comment_likes
+    Follow      <-> follows
+    Report      <-> reports
+    PlatformSetting <-> platform_settings
+    TokenBlacklist  <-> token_blacklist
+
+  Minor discrepancy: image_url and avatar_url widened to VARCHAR(500)
+  in DB via migration, but backend models still define String(255).
+  No functional impact (SQLAlchemy does not enforce column width on write).
+
+  All foreign keys, unique constraints, and indexes are consistent
+  between SQL DDL and Python model declarations.
+
+
+================================================================================
+6. END-TO-END FEATURE FLOWS
+================================================================================
+
+6.1 USER REGISTRATION
+------------------------------------------------------------------------------
+  Register.tsx          -> AuthContext.register()
+  POST /api/auth/register   -> User + Profile created (bcrypt hash)
+  auto-login            -> POST /api/auth/login
+  Returns JWT + user    -> localStorage persistence
+  Redirect to /         -> isAuthenticated = true
+
+6.2 BLOG CREATION WITH AI
+------------------------------------------------------------------------------
+  CreateBlog.tsx
+  -> Option A: Upload cover image (POST /api/upload/image)
+  -> Option B: Generate cover image (POST /api/ai/generate-image)
+  -> User writes content
+  -> AI Content Review (POST /api/ai/analyze)
+  -> AI Fact-Check (POST /api/ai/fact-check)
+  -> AI Writing Assistant (POST /api/ai/generate)
+  -> Save Draft / Publish (POST /api/blogs)
+  -> If AI analysis requested: saved to ai_analysis table
+
+6.3 ADMIN MODERATION
+------------------------------------------------------------------------------
+  Admin login -> JWT with admin role
+  GET /api/admin/stats     -> Dashboard charts
+  GET /api/admin/users     -> User management table
+  PUT .../toggle-active    -> Ban/unban user
+  PUT .../role             -> Change to admin/user
+  GET /api/admin/blogs     -> Blog moderation list
+  POST .../approve         -> status='published'
+  POST .../reject          -> status='rejected'
+  GET /api/admin/reports   -> Content reports
+  POST .../resolve         -> status='resolved'/'dismissed'
+  GET/PUT /api/admin/settings -> Platform configuration
+
+6.4 TRENDING COMPUTATION
+------------------------------------------------------------------------------
+  GET /api/trending/topics:
+    SELECT tags, score=COUNT*10 + SUM(views)*2 + SUM(likes)*5
+    + SUM(comments)*3
+    GROUP BY tags, ORDER BY score DESC, LIMIT 10
+
+  GET /api/trending/authors:
+    Score = blogs*15 + views*1 + likes*8 + comments*5 + followers*20
+    Real-time query, no caching
+
+6.5 SEARCH
+------------------------------------------------------------------------------
+  GET /api/search?q=<query>:
+    - FULLTEXT MATCH on blogs.title + blogs.content
+    - LIKE search on users.username + users.email
+    - Returns {blogs[], users[]}
+
+
+================================================================================
+7. API CONTRACT SUMMARY
+==============================================================================
+  Total endpoints: ~46
+
+  Prefix summary:
+    /api/auth/*        - 5 endpoints
+    /api/blogs/*       - 8 endpoints
+    /api/comments/*    - 4 endpoints
+    /api/admin/*       - 14 endpoints
+    /api/ai/*          - 5 endpoints
+    /api/upload/*      - 1 endpoint
+    /api/analytics/*   - 3 endpoints
+    /api/trending/*    - 4 endpoints
+    /api/users/*       - 5 endpoints
+    /api/search/*      - 1 endpoint
+    /api/test/*        - 5 endpoints
+
+  Authentication required: ~28 endpoints (JWT)
+  Admin only: ~14 endpoints
+  Public: ~14 endpoints
+
+
+================================================================================
+8. KNOWN ISSUES & NOTES
+================================================================================
+
+  FRONTEND:
+    1. No test suite implemented (vitest in deps but not configured)
+    2. Wouter is patched (route collection) -- maintain patch on update
+    3. No .env files committed; must create from template
+    4. Google Maps integration requires VITE_FRONTEND_FORGE_API_KEY
+    5. ManusDialog references external OAuth portal (Manus platform)
+    6. Umami analytics in index.html requires env vars
+
+  BACKEND:
+    1. No formal test framework (ad-hoc scripts only)
+    2. Voice-to-text feature partially implemented (audio/ folder,
+       vosk-model, cached .pyc) but source code deleted
+    3. Translation feature cached but source code deleted
+    4. MySQL password empty (root:@localhost) -- local dev only
+    5. Seed data uses same bcrypt hash for both users
+    6. OCR/translation tool packages installed in venv (deep-translator,
+       libretranslate, argos-translate, pymupdf) but no usage found
+    7. Waitress WSGI server installed but not configured in run.py
+       (uses Flask dev server)
+
+  DATABASE:
+    1. schema.sql not idempotent (no IF NOT EXISTS)
+    2. avatar_url/image_url VARCHAR mismatch between DB (500) and
+       backend model (255)
+    3. No formal ERD diagram
+    4. No stored procedures, triggers, or views
+
+  GENERAL:
+    1. Multiple .md documentation files at root level (15+ files) --
+       many are AI review/guide documents
+    2. frontend_v2/ is the active frontend; frontend/ directory
+       appears to be an older version
+    3. No Docker configuration for containerized deployment
+    4. No CI/CD pipeline configuration
+    5. CORS is globally enabled (consider restricting in production)
+    6. JWT secret key is hardcoded default in config.py fallback
+
+================================================================================
+END OF REPORT
+================================================================================
